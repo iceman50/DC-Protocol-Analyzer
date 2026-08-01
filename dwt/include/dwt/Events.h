@@ -1,0 +1,233 @@
+/*
+  DC++ Widget Toolkit
+
+  Copyright (c) 2007-2013, Jacek Sieka
+
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without modification,
+  are permitted provided that the following conditions are met:
+
+      * Redistributions of source code must retain the above copyright notice,
+        this list of conditions and the following disclaimer.
+      * Redistributions in binary form must reproduce the above copyright notice,
+        this list of conditions and the following disclaimer in the documentation
+        and/or other materials provided with the distribution.
+      * Neither the name of the DWT nor the names of its contributors
+        may be used to endorse or promote products derived from this software
+        without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#ifndef DWT_EVENTS_H_
+#define DWT_EVENTS_H_
+
+#include "WindowsHeaders.h"
+#include "Point.h"
+#include "Rectangle.h"
+#include "tstring.h"
+
+#include <vector>
+
+namespace dwt {
+
+struct DpiChangedEvent {
+	DpiChangedEvent(unsigned oldDpi_, const MSG& msg);
+
+	unsigned oldDpi;
+	unsigned newDpi;
+	Rectangle suggestedBounds;
+};
+
+struct DpiResourceEvent {
+	DpiResourceEvent(unsigned oldDpi_, unsigned newDpi_) :
+		oldDpi(oldDpi_), newDpi(newDpi_) { }
+
+	unsigned oldDpi;
+	unsigned newDpi;
+
+	int scale(int value) const {
+		return oldDpi ? ::MulDiv(value, static_cast<int>(newDpi),
+			static_cast<int>(oldDpi)) : value;
+	}
+
+	Point scale(const Point& value) const {
+		return Point(scale(static_cast<int>(value.x)),
+			scale(static_cast<int>(value.y)));
+	}
+};
+
+struct SystemSettingsEvent {
+	explicit SystemSettingsEvent(const MSG& msg);
+
+	UINT action;
+	tstring section;
+	bool highContrast;
+	bool clientAreaAnimation;
+
+	bool accessibilityChanged() const {
+		return section == _T("Accessibility") ||
+			action == SPI_SETHIGHCONTRAST;
+	}
+};
+
+struct SizedEvent {
+	SizedEvent(const MSG& msg);
+
+	/// Size
+	/** New size of the window
+	  */
+	Point size;
+
+	/// is window maximized
+	/** true if window was being maximized, otherwise false
+	  */
+	bool isMaximized;
+
+	/// is window minimized
+	/** true if window was being minimized, otherwise false
+	  */
+	bool isMinimized;
+
+	/// is window restored
+	/** true if window was being restored, otherwise false
+	  */
+	bool isRestored;
+};
+
+/// Mouse Event structure
+/** Several event handlers supply an object of this type as one or more parameters to
+  * their Event Handler. <br>
+  * E.g. the "onLeftMouseUp" Event Handler takes an object of this type to give
+  * extensive information regarding the Event.
+  */
+struct MouseEvent {
+	MouseEvent(const MSG& msg);
+
+	/// Types of buttons
+	enum Button {
+		OTHER, LEFT, RIGHT, MIDDLE, X1, X2
+	};
+
+	/// Position of mouse
+	/** Position of mouse when event was raised
+	  */
+	ScreenCoordinate pos;
+
+	/// is the CTRL key pressed
+	/** true if CTRL key is pressed, otherwise false
+	  */
+	bool isControlPressed;
+
+	/// is the SHIFT key pressed
+	/** true if SHIFT key is pressed, otherwise false
+	  */
+	bool isShiftPressed;
+
+	/// Indicates which mouse button was actually pressed
+	Button ButtonPressed;
+};
+
+struct PointerEvent {
+	enum Type {
+		Unknown = 0,
+		Generic = 1,
+		Touch = 2,
+		Pen = 3,
+		Mouse = 4,
+		Touchpad = 5
+	};
+
+	PointerEvent(const MSG& msg);
+
+	unsigned id;
+	Type type;
+	ScreenCoordinate pos;
+	unsigned flags;
+	int wheelDelta;
+	bool infoAvailable;
+	bool touchInfoAvailable;
+	bool penInfoAvailable;
+	bool primary;
+	bool inContact;
+	bool canceled;
+	POINTER_INFO info;
+	POINTER_TOUCH_INFO touchInfo;
+	POINTER_PEN_INFO penInfo;
+	std::vector<POINTER_INFO> history;
+	std::vector<POINTER_TOUCH_INFO> touchHistory;
+	std::vector<POINTER_PEN_INFO> penHistory;
+};
+
+struct TouchPoint {
+	unsigned id;
+	ScreenCoordinate pos;
+	Rectangle contact;
+	DWORD flags;
+	DWORD mask;
+	DWORD time;
+	ULONG_PTR extraInfo;
+	bool down;
+	bool up;
+	bool move;
+	bool primary;
+	bool palm;
+	bool pen;
+	bool hasContact;
+	TOUCHINPUT raw;
+};
+
+struct TouchEvent {
+	explicit TouchEvent(const MSG& msg);
+
+	bool valid;
+	std::vector<TouchPoint> points;
+};
+
+struct GestureEvent {
+	enum Type {
+		Begin = GID_BEGIN,
+		End = GID_END,
+		Zoom = GID_ZOOM,
+		Pan = GID_PAN,
+		Rotate = GID_ROTATE,
+		TwoFingerTap = GID_TWOFINGERTAP,
+		PressAndTap = GID_PRESSANDTAP
+	};
+
+	explicit GestureEvent(const MSG& msg);
+
+	bool valid;
+	Type type;
+	ScreenCoordinate pos;
+	DWORD flags;
+	unsigned instanceId;
+	unsigned sequenceId;
+	ULONGLONG arguments;
+	std::vector<BYTE> extraArgs;
+	GESTUREINFO info;
+};
+
+struct GestureNotifyEvent {
+	explicit GestureNotifyEvent(const MSG& msg);
+
+	bool valid;
+	ScreenCoordinate pos;
+	DWORD flags;
+	unsigned instanceId;
+	GESTURENOTIFYSTRUCT info;
+};
+
+}
+
+#endif /*EVENTS_H_*/
