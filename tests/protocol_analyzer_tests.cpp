@@ -134,6 +134,32 @@ int main() {
 	const auto iinf = analyze("ADC", "IINF CT32 NIExample\\sHub");
 	expect(iinf.command == "IINF" && iinf.routing == "From hub",
 		"IINF is recognized as hub-originated information");
+	expect(fieldValue(iinf, "CT") == "32 (Hub)" &&
+		fieldValue(iinf, "CT.hub") == "Set" &&
+		iinf.summary.find("type 32 (Hub)") != std::string::npos,
+		"ADC INF identifies the hub client type");
+	const auto adcClientTypes = analyze("ADC", "BINF ABCD CT127 NIservice");
+	expect(adcClientTypes.status == Status::Valid &&
+		fieldValue(adcClientTypes, "CT") ==
+			"127 (Bot, Registered user, Operator, Super user, Hub owner, Hub, Hidden)" &&
+		fieldValue(adcClientTypes, "CT.bot") == "Set" &&
+		fieldValue(adcClientTypes, "CT.registered") == "Set" &&
+		fieldValue(adcClientTypes, "CT.operator") == "Set" &&
+		fieldValue(adcClientTypes, "CT.super") == "Set" &&
+		fieldValue(adcClientTypes, "CT.owner") == "Set" &&
+		fieldValue(adcClientTypes, "CT.hub") == "Set" &&
+		fieldValue(adcClientTypes, "CT.hidden") == "Set",
+		"ADC INF decodes every documented additive client-type flag");
+	const auto ordinaryAdcClient = analyze("ADC", "BINF ABCD CT0 NIuser");
+	expect(ordinaryAdcClient.status == Status::Valid &&
+		fieldValue(ordinaryAdcClient, "CT") == "0 (No client-type flags)",
+		"ADC INF accepts an ordinary client with no type flags");
+	const auto futureAdcClientType = analyze("ADC", "BINF ABCD CT128 NIuser");
+	const auto malformedAdcClientType = analyze("ADC", "BINF ABCD CTbot NIuser");
+	expect(futureAdcClientType.status == Status::Warning &&
+		fieldValue(futureAdcClientType, "CT.unknown") == "128" &&
+		malformedAdcClientType.status == Status::Invalid,
+		"ADC INF preserves unknown client-type bits and rejects malformed CT values");
 	const auto csup = analyze("ADC", "CSUP ADBASE ADTIGR");
 	expect(csup.command == "CSUP" && csup.routing == "Client-to-client TCP" &&
 		csup.fields.size() == 2,
@@ -485,6 +511,39 @@ int main() {
 		"NMDC MyINFO nickname is decoded");
 	expect(myInfo.summary.find("1.00 GiB") != std::string::npos,
 		"NMDC MyINFO share size is summarized");
+	expect(fieldValue(myInfo, "connection") == "LAN(T3)" &&
+		fieldValue(myInfo, "status") == "49 (0x31)" &&
+		fieldValue(myInfo, "status.normal") == "Set" &&
+		fieldValue(myInfo, "status.tls") == "Set" &&
+		fieldValue(myInfo, "status.nat") == "Set",
+		"NMDC MyINFO separates and decodes its combined status byte");
+
+	auto myInfoWithStatus = [](unsigned char status) {
+		std::string message =
+			"$MyINFO $ALL status-user Test$ $LAN(T3)";
+		message.push_back(static_cast<char>(status));
+		message += "$status@example.invalid$42$|";
+		return protocol_analyzer::analyze("NMDC", message);
+	};
+	const auto everyNmdcStatus = myInfoWithStatus(0xffU);
+	expect(everyNmdcStatus.status == Status::Valid &&
+		fieldValue(everyNmdcStatus, "status") == "255 (0xFF)" &&
+		fieldValue(everyNmdcStatus, "status.normal") == "Set" &&
+		fieldValue(everyNmdcStatus, "status.away") == "Set" &&
+		fieldValue(everyNmdcStatus, "status.server") == "Set" &&
+		fieldValue(everyNmdcStatus, "status.fireball") == "Set" &&
+		fieldValue(everyNmdcStatus, "status.tls") == "Set" &&
+		fieldValue(everyNmdcStatus, "status.nat") == "Set" &&
+		fieldValue(everyNmdcStatus, "status.ipv4") == "Set" &&
+		fieldValue(everyNmdcStatus, "status.ipv6") == "Set",
+		"NMDC MyINFO detects every documented status and capability bit");
+	const auto whitespaceNmdcStatus = myInfoWithStatus(0x20U);
+	expect(whitespaceNmdcStatus.status == Status::Valid &&
+		fieldValue(whitespaceNmdcStatus, "connection") == "LAN(T3)" &&
+		fieldValue(whitespaceNmdcStatus, "status") == "32 (0x20)" &&
+		fieldValue(whitespaceNmdcStatus, "status.nat") == "Set" &&
+		fieldValue(whitespaceNmdcStatus, "status.normal").empty(),
+		"NMDC MyINFO preserves and decodes a whitespace-valued status byte");
 
 	const auto search = analyze("NMDC",
 		"$Search 192.0.2.1:412 T?T?500000?1?Linux$ISO|");

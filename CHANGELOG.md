@@ -7,6 +7,15 @@ The project uses a two-component public version, beginning with 1.00 after the
 Protocol Analyzer rebrand. Earlier DevPlugin releases are retained below as
 legacy history.
 
+## [Unreleased]
+
+### Added
+
+- Added decoding for the additive ADC `INF` `CT` client-type flags, including
+  bot, registered user, operator, super user, hub owner, hub, and hidden types.
+- Added detection for NMDC delimiter-only keep-alive messages and decoding for
+  the status and capability flags in the `$MyINFO` connection-status byte.
+
 ## [1.00] - 2026-07-25
 
 ### Added

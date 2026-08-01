@@ -56,6 +56,18 @@ struct FeatureDefinition {
 	const char* name;
 };
 
+struct NmdcStatusDefinition {
+	uint8_t mask;
+	const char* code;
+	const char* name;
+};
+
+struct AdcClientTypeDefinition {
+	uint64_t mask;
+	const char* code;
+	const char* name;
+};
+
 constexpr std::array<Definition, 32> ADC_DEFINITIONS {{
 	{ "STA", "Status", "Status" },
 	{ "SUP", "Supported features", "Handshake" },
@@ -265,6 +277,27 @@ constexpr std::array<FeatureDefinition, 42> NMDC_FEATURE_DEFINITIONS {{
 	{ "NickRule", "Nickname rules" },
 	{ "SearchRule", "Search rules" },
 	{ "HubURL", "Connected hub URL reporting" }
+}};
+
+constexpr std::array<NmdcStatusDefinition, 8> NMDC_STATUS_DEFINITIONS {{
+	{ 0x01U, "status.normal", "Normal status" },
+	{ 0x02U, "status.away", "Away status" },
+	{ 0x04U, "status.server", "Server status" },
+	{ 0x08U, "status.fireball", "Fireball status" },
+	{ 0x10U, "status.tls", "TLS support" },
+	{ 0x20U, "status.nat", "NAT traversal support" },
+	{ 0x40U, "status.ipv4", "IPv4 support" },
+	{ 0x80U, "status.ipv6", "IPv6 support" }
+}};
+
+constexpr std::array<AdcClientTypeDefinition, 7> ADC_CLIENT_TYPE_DEFINITIONS {{
+	{ 1U, "CT.bot", "Bot" },
+	{ 2U, "CT.registered", "Registered user" },
+	{ 4U, "CT.operator", "Operator" },
+	{ 8U, "CT.super", "Super user" },
+	{ 16U, "CT.owner", "Hub owner" },
+	{ 32U, "CT.hub", "Hub" },
+	{ 64U, "CT.hidden", "Hidden" }
 }};
 
 constexpr std::array<std::pair<const char*, const char*>, 115> ADC_FIELD_NAMES {{
@@ -734,6 +767,51 @@ bool parseUnsigned(string_view value, uint64_t& number) {
 	return true;
 }
 
+void addAdcClientTypeFields(Result& result, string_view value) {
+	uint64_t flags = 0;
+	if(!parseUnsigned(value, flags)) {
+		addField(result, "CT", "Client type", bounded(value));
+		addWarning(result,
+			"ADC INF CT client type must be an unsigned decimal bitfield.", true);
+		return;
+	}
+
+	string description;
+	for(const auto& definition : ADC_CLIENT_TYPE_DEFINITIONS) {
+		if((flags & definition.mask) == 0U) {
+			continue;
+		}
+		if(!description.empty()) {
+			description += ", ";
+		}
+		description += definition.name;
+	}
+	if(description.empty()) {
+		description = "No client-type flags";
+	}
+
+	constexpr uint64_t knownMask = 1U | 2U | 4U | 8U | 16U | 32U | 64U;
+	const auto unknown = flags & ~knownMask;
+	if(unknown != 0U) {
+		description += ", unknown bits " + std::to_string(unknown);
+		addWarning(result,
+			"ADC INF CT contains unknown client-type bits; they were preserved.");
+	}
+
+	addField(result, "CT", "Client type",
+		std::to_string(flags) + " (" + description + ")");
+	for(const auto& definition : ADC_CLIENT_TYPE_DEFINITIONS) {
+		if((flags & definition.mask) != 0U) {
+			addField(result, definition.code,
+				string("Client type — ") + definition.name, "Set");
+		}
+	}
+	if(unknown != 0U) {
+		addField(result, "CT.unknown", "Unknown client-type bits",
+			std::to_string(unknown));
+	}
+}
+
 string formatBytes(uint64_t value) {
 	static constexpr std::array<const char*, 5> units {{
 		"bytes", "KiB", "MiB", "GiB", "TiB"
@@ -986,6 +1064,10 @@ void parseAdcNamedFields(Result& result, string_view whole,
 		if(result.action == "INF" && code == "SU") {
 			decoded = describeAdcFeatureList(decoded);
 		}
+		if(result.action == "INF" && code == "CT") {
+			addAdcClientTypeFields(result, decoded);
+			continue;
+		}
 		addField(result, string(code), adcFieldName(result, code),
 			std::move(decoded), sensitive);
 	}
@@ -1007,6 +1089,10 @@ void parseAdcGenericParameters(Result& result, string_view whole,
 			auto decoded = decodeAdcValue(result, encoded);
 			if(result.action == "INF" && code == "SU") {
 				decoded = describeAdcFeatureList(decoded);
+			}
+			if(result.action == "INF" && code == "CT") {
+				addAdcClientTypeFields(result, decoded);
+				continue;
 			}
 			addField(result, string(code), adcFieldName(result, code),
 				std::move(decoded), sensitive);
@@ -1218,8 +1304,12 @@ void buildAdcSummary(Result& result) {
 		const auto name = firstFieldValue(result, "NI");
 		const auto share = firstFieldValue(result, "SS");
 		const auto files = firstFieldValue(result, "SF");
+		const auto clientType = firstFieldValue(result, "CT");
 		if(!name.empty()) {
 			summary += " for " + name;
+		}
+		if(!clientType.empty()) {
+			summary += ", type " + clientType;
 		}
 		uint64_t bytes = 0;
 		if(parseUnsigned(share, bytes)) {
@@ -1714,6 +1804,48 @@ void genericNmdcParameters(Result& result, string_view parameters) {
 	}
 }
 
+string parseNmdcConnectionStatus(Result& result, string_view value) {
+	if(value.empty()) {
+		addWarning(result, "$MyINFO is missing its connection and status byte.", true);
+		return string();
+	}
+
+	const auto flag = static_cast<uint8_t>(
+		static_cast<unsigned char>(value.back()));
+	value.remove_suffix(1);
+	value = trimAscii(value);
+	addField(result, "connection", "Connection", decodeNmdcText(value));
+	if(value.empty()) {
+		addWarning(result, "$MyINFO has a status byte but no connection value.");
+	}
+
+	constexpr char hex[] = "0123456789ABCDEF";
+	string rawValue = std::to_string(static_cast<unsigned>(flag));
+	rawValue += " (0x";
+	rawValue += hex[(flag >> 4U) & 0x0fU];
+	rawValue += hex[flag & 0x0fU];
+	rawValue += ')';
+	addField(result, "status", "Status flag byte", std::move(rawValue));
+
+	string description;
+	for(const auto& definition : NMDC_STATUS_DEFINITIONS) {
+		if((flag & definition.mask) == 0U) {
+			continue;
+		}
+		addField(result, definition.code, definition.name, "Set");
+		if(!description.empty()) {
+			description += ", ";
+		}
+		description += definition.name;
+	}
+	if(description.empty()) {
+		description = "No documented status flags";
+		addWarning(result,
+			"$MyINFO status byte does not set any documented status or capability bits.");
+	}
+	return description;
+}
+
 void parseNmdcMyInfo(Result& result, string_view parameters) {
 	auto value = trimAscii(parameters);
 	if(value.substr(0, 5) != "$ALL ") {
@@ -1734,9 +1866,9 @@ void parseNmdcMyInfo(Result& result, string_view parameters) {
 	if(!segments.empty()) {
 		addField(result, "description", "Description", decodeNmdcText(segments[0]));
 	}
+	string statusDescription;
 	if(segments.size() > 2) {
-		addField(result, "connection", "Connection and status",
-			decodeNmdcText(trimAscii(segments[2])));
+		statusDescription = parseNmdcConnectionStatus(result, segments[2]);
 	}
 	if(segments.size() > 3) {
 		addField(result, "email", "Email", decodeNmdcText(segments[3]));
@@ -1751,6 +1883,9 @@ void parseNmdcMyInfo(Result& result, string_view parameters) {
 	const auto share = firstFieldValue(result, "share");
 	uint64_t bytes = 0;
 	string summary = "User information for " + (nick.empty() ? string("[unknown]") : nick);
+	if(!statusDescription.empty()) {
+		summary += ", " + statusDescription;
+	}
 	if(parseUnsigned(share, bytes)) {
 		summary += ", sharing " + formatBytes(bytes);
 	}
