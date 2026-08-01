@@ -34,9 +34,10 @@ class Logger
 public:
 	static bool init();
 	static void init(DCLogPtr coreLogger);
+	static void reset() noexcept;
 	static DCLogPtr handle();
 
-	static void log(const string& message);
+	static bool log(const string& message) noexcept;
 
 private:
 	static DCLogPtr logger;

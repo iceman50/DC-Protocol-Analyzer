@@ -27,13 +27,32 @@ namespace dcapi {
 DCLogPtr Logger::logger;
 
 bool Logger::init() {
-	if(!Core::handle()) { return false; }
-	init(reinterpret_cast<DCLogPtr>(Core::handle()->query_interface(DCINTF_LOGGING, DCINTF_LOGGING_VER)));
-	return logger;
+	auto core = Core::handle();
+	if(!core || !core->query_interface) {
+		return false;
+	}
+	init(reinterpret_cast<DCLogPtr>(
+		core->query_interface(DCINTF_LOGGING, DCINTF_LOGGING_VER)));
+	return logger && logger->log;
 }
 void Logger::init(DCLogPtr coreLogger) { logger = coreLogger; }
+void Logger::reset() noexcept {
+	auto old = logger;
+	logger = nullptr;
+	Core::releaseInterface(reinterpret_cast<DCInterfacePtr>(old));
+}
 DCLogPtr Logger::handle() { return logger; }
 
-void Logger::log(const string& message) { logger->log(message.c_str()); }
+bool Logger::log(const string& message) noexcept {
+	if(!logger || !logger->log) {
+		return false;
+	}
+	try {
+		logger->log(message.c_str());
+		return true;
+	} catch(...) {
+		return false;
+	}
+}
 
 } // namespace dcapi

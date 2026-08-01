@@ -27,11 +27,20 @@ namespace dcapi {
 DCDataAccessPtr DataAccess::dataAccessor;
 
 bool DataAccess::init() {
-	if(!Core::handle()) { return false; }
-	init(reinterpret_cast<DCDataAccessPtr>(Core::handle()->query_interface(DCINTF_DCPP_DATAACCESSOR, DCINTF_DCPP_DATAACCESSOR_VER)));
-	return dataAccessor != NULL;
+	auto core = Core::handle();
+	if(!core || !core->query_interface) {
+		return false;
+	}
+	init(reinterpret_cast<DCDataAccessPtr>(
+		core->query_interface(DCINTF_DCPP_DATAACCESSOR, DCINTF_DCPP_DATAACCESSOR_VER)));
+	return dataAccessor && dataAccessor->get_http_resource;
 }
 void DataAccess::init(DCDataAccessPtr coreDataAccessor) { dataAccessor = coreDataAccessor; }
+void DataAccess::reset() noexcept {
+	auto old = dataAccessor;
+	dataAccessor = nullptr;
+	Core::releaseInterface(reinterpret_cast<DCInterfacePtr>(old));
+}
 DCDataAccessPtr DataAccess::handle() { return dataAccessor; }
 
 } // namespace dcapi

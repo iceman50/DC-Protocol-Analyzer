@@ -27,11 +27,20 @@ namespace dcapi {
 DCConnectionPtr Connections::connections;
 
 bool Connections::init() {
-	if(!Core::handle()) { return false; }
-	init(reinterpret_cast<DCConnectionPtr>(Core::handle()->query_interface(DCINTF_DCPP_CONNECTIONS, DCINTF_DCPP_CONNECTIONS_VER)));
-	return connections;
+	auto core = Core::handle();
+	if(!core || !core->query_interface) {
+		return false;
+	}
+	init(reinterpret_cast<DCConnectionPtr>(
+		core->query_interface(DCINTF_DCPP_CONNECTIONS, DCINTF_DCPP_CONNECTIONS_VER)));
+	return connections && connections->get_user;
 }
 void Connections::init(DCConnectionPtr coreConnections) { connections = coreConnections; }
+void Connections::reset() noexcept {
+	auto old = connections;
+	connections = nullptr;
+	Core::releaseInterface(reinterpret_cast<DCInterfacePtr>(old));
+}
 DCConnectionPtr Connections::handle() { return connections; }
 
 } // namespace dcapi

@@ -30,6 +30,7 @@ class Tagger
 public:
 	static bool init();
 	static void init(DCTaggerPtr coreTagger);
+	static void reset() noexcept;
 	static DCTaggerPtr handle();
 
 private:

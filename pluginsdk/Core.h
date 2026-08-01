@@ -32,8 +32,10 @@ using std::string;
 class Core
 {
 public:
-	static void init(DCCorePtr corePtr);
+	static bool init(DCCorePtr corePtr);
+	static void reset() noexcept;
 	static DCCorePtr handle();
+	static bool releaseInterface(DCInterfacePtr interfacePtr) noexcept;
 
 	static string appName;
 

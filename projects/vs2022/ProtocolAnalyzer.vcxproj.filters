@@ -1,0 +1,800 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Plugin SDK">
+      <UniqueIdentifier>{06f1f0f7-e8f5-48f2-999e-e53a04056b83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Plugin SDK">
+      <UniqueIdentifier>{ff6b64da-cee7-4033-bcef-4b0545314cbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\dwt">
+      <UniqueIdentifier>{aa6fd910-42c4-462d-a764-9dd8fab0822c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\dwt\widgets">
+      <UniqueIdentifier>{ef987a02-0fb8-4e98-b969-09ef55fdaf0b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\dwt\util">
+      <UniqueIdentifier>{5443789e-50f3-49ca-a24f-73c43bdda5df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\dwt\util\win32">
+      <UniqueIdentifier>{6cd9539d-02a6-4446-9922-e0ced9ab20d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\dwt">
+      <UniqueIdentifier>{5b63c6ca-970d-4bfa-951c-fe613eb984ae}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Plugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProtocolAnalyzer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pluginsdk\Config.cpp">
+      <Filter>Source Files\Plugin SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pluginsdk\Connections.cpp">
+      <Filter>Source Files\Plugin SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pluginsdk\Core.cpp">
+      <Filter>Source Files\Plugin SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pluginsdk\Hooks.cpp">
+      <Filter>Source Files\Plugin SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pluginsdk\Hubs.cpp">
+      <Filter>Source Files\Plugin SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pluginsdk\Logger.cpp">
+      <Filter>Source Files\Plugin SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pluginsdk\Queue.cpp">
+      <Filter>Source Files\Plugin SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pluginsdk\UI.cpp">
+      <Filter>Source Files\Plugin SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pluginsdk\Util.cpp">
+      <Filter>Source Files\Plugin SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pluginsdk\Tagger.cpp">
+      <Filter>Source Files\Plugin SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\CanvasClasses.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\CommandLine.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Dispatcher.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\DWTException.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Events.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Font.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Icon.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\ImageList.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\LibraryLoader.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Message.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Pen.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Point.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Rectangle.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Region.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Taskbar.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Texts.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Theme.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Widget.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Application.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Bitmap.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Brush.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\util\RegKey.cpp">
+      <Filter>Source Files\dwt\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\util\StringUtils.cpp">
+      <Filter>Source Files\dwt\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\util\TimeSpan.cpp">
+      <Filter>Source Files\dwt\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\util\GDI.cpp">
+      <Filter>Source Files\dwt\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\util\win32\ApiHelpers.cpp">
+      <Filter>Source Files\dwt\util\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\util\win32\AccessibilityProvider.cpp">
+      <Filter>Source Files\dwt\util\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\util\win32\Dpi.cpp">
+      <Filter>Source Files\dwt\util\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\util\win32\FileDialog.cpp">
+      <Filter>Source Files\dwt\util\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\util\win32\Version.cpp">
+      <Filter>Source Files\dwt\util\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\ComboBox.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Control.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\FolderDialog.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\FontDialog.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Grid.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\GroupBox.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Header.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Label.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Link.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\LoadDialog.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\MDIChild.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\MDIFrame.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\MDIParent.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Menu.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\MessageBox.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\MonthCalendar.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\ModalDialog.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\ModelessDialog.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Notification.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\ProgressBar.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\RadioButton.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Rebar.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\RichTextBox.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\SaveDialog.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\ScrolledContainer.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Slider.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Spinner.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Splitter.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\SplitterContainer.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\StatusBar.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Table.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\TabView.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\TaskDialog.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\TextBox.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\ToolBar.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\ToolTip.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Tree.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\VirtualTree.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Window.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\Button.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\CheckBox.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\ColorDialog.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\DateTime.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\util\DateTimeUtil.cpp">
+      <Filter>Source Files\dwt\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\CustomTitleBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\GUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\Clipboard.cpp">
+      <Filter>Source Files\dwt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dwt\src\widgets\TableTree.cpp">
+      <Filter>Source Files\dwt\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SettingsDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pluginsdk\DataAccess.cpp">
+      <Filter>Source Files\Plugin SDK</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\Config.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\Connections.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\Core.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\Hooks.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\Hubs.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\Logger.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\Queue.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\UI.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\Util.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\Tagger.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\PluginDefs.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\CustomTitleBar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\GUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Activate.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\win32\ApiHelpers.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\win32\AccessibilityProvider.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\win32\Dpi.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\win32\FileDialog.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Accessibility.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Application.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Atom.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Bitmap.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Border.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Brush.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Button.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\CanvasClasses.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Caption.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\check.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\CheckBox.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Child.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Children.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Clickable.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Clipboard.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Closeable.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Collection.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Colorable.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ColorDialog.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Column.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Columns.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ComboBox.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Command.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\CommandLine.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Composite.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Container.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\ContextMenu.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Control.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Cursor.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\CustomDraw.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Data.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\DateTime.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\DateTimeUtil.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Dialog.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Dispatcher.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Dispatchers.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\doxygen.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\DragDrop.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\dwt_dwmapi.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\dwt_vsstyle.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\dwt_vssym32.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\DWTException.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Enabled.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\EraseBackground.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Events.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\FileFilter.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\FolderDialog.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Font.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\FontDialog.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Fonts.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\forward.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Frame.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\GCCHeaders.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\GDI.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Grid.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\GroupBox.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Handle.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Header.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Help.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\HoldRedraw.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\HoldResize.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\IntrusivePtr.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Icon.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\resources\ImageList.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Keyboard.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Label.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\LibraryLoader.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Link.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\LoadDialog.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\MDIChild.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\MDIFrame.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\MDIParent.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Menu.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Message.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\MessageBox.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\MonthCalendar.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\MinMax.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ModalDialog.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ModelessDialog.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Mouse.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Notification.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Painting.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Pen.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Point.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ProgressBar.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\RadioButton.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Raw.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Rebar.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Rectangle.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Region.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\RegKey.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\RichTextBox.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\SaveDialog.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Scrollable.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ScrolledContainer.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Selection.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Sizable.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Slider.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Spinner.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Splitter.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\SplitterContainer.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\StatusBar.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\StringConversion.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\StringUtils.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Table.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\TaskDialog.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\TableTree.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\TabView.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Taskbar.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\TextBox.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Texts.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Theme.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Timer.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\TimeSpan.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ToolBar.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ToolTip.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Tree.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\tstream.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\tstring.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Update.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\VCDesktopHeaders.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Version.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\win32\Version.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\VirtualTree.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Visible.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\Widget.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\WidgetCreator.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Window.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\WindowsHeaders.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dwt\include\dwt\util\xCeptionSmartUtilities.h">
+      <Filter>Header Files\dwt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\SettingsDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\TableColors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\UIStyles.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pluginsdk\DataAccess.h">
+      <Filter>Header Files\Plugin SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Plugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ProtocolAnalyzer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\src\resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

@@ -27,11 +27,21 @@ namespace dcapi {
 DCHubPtr Hubs::hubs;
 
 bool Hubs::init() {
-	if(!Core::handle()) { return false; }
-	init(reinterpret_cast<DCHubPtr>(Core::handle()->query_interface(DCINTF_DCPP_HUBS, DCINTF_DCPP_HUBS_VER)));
-	return hubs;
+	auto core = Core::handle();
+	if(!core || !core->query_interface) {
+		return false;
+	}
+	init(reinterpret_cast<DCHubPtr>(
+		core->query_interface(DCINTF_DCPP_HUBS, DCINTF_DCPP_HUBS_VER)));
+	return hubs && hubs->send_protocol_cmd && hubs->local_message &&
+		hubs->release_user;
 }
 void Hubs::init(DCHubPtr coreHub) { hubs = coreHub; }
+void Hubs::reset() noexcept {
+	auto old = hubs;
+	hubs = nullptr;
+	Core::releaseInterface(reinterpret_cast<DCInterfacePtr>(old));
+}
 DCHubPtr Hubs::handle() { return hubs; }
 
 } // namespace dcapi

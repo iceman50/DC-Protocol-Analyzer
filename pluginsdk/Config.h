@@ -22,6 +22,7 @@
 #define PLUGINSDK_CONFIG_H
 
 #include <string>
+#include <type_traits>
 
 #include <pluginsdk/PluginDefs.h>
 
@@ -34,6 +35,7 @@ class Config
 public:
 	static bool init(string pluginGuid);
 	static void init(DCConfigPtr coreConfig, string pluginGuid);
+	static void reset() noexcept;
 	static DCConfigPtr handle();
 
 	static void setConfig(const char* name, const char* value);
@@ -49,7 +51,7 @@ public:
 	static int64_t getInt64Config(const char* name);
 
 	static ConfigValuePtr getCoreConfig(const char* name);
-	static void freeCoreConfig(ConfigValuePtr value);
+	static void freeCoreConfig(ConfigValuePtr value) noexcept;
 
 	static string getPath(PathType type);
 	static string getInstallPath();
@@ -57,6 +59,7 @@ public:
 private:
 	template<typename ConfigT, typename ValueT> static void setConfig(const char* name, ConfigType type, ValueT value);
 	template<typename ConfigT, typename RetT> static RetT getConfig(const char* name, ConfigType type);
+	static void releaseValue(DCConfigPtr owner, ConfigValuePtr value) noexcept;
 
 	static DCConfigPtr config;
 
@@ -64,15 +67,52 @@ private:
 };
 
 template<typename ConfigT, typename ValueT> void Config::setConfig(const char* name, ConfigType type, ValueT value) {
+	auto owner = config;
+	if(!owner || !owner->set_cfg || !name || !*name || guid.empty()) {
+		return;
+	}
 	ConfigT val = { type, value };
-	config->set_cfg(guid.c_str(), name, reinterpret_cast<ConfigValuePtr>(&val));
+	try {
+		owner->set_cfg(guid.c_str(), name, reinterpret_cast<ConfigValuePtr>(&val));
+	} catch(...) {
+	}
 }
 
 template<typename ConfigT, typename RetT> RetT Config::getConfig(const char* name, ConfigType type) {
-	auto cfg = config->get_cfg(guid.c_str(), name, type);
-	RetT ret(reinterpret_cast<ConfigT>(cfg)->value);
-	config->release(cfg);
-	return ret;
+	auto owner = config;
+	if(!owner || !owner->get_cfg || !owner->release ||
+		!name || !*name || guid.empty())
+	{
+		return RetT {};
+	}
+	ConfigValuePtr cfg = nullptr;
+	try {
+		cfg = owner->get_cfg(guid.c_str(), name, type);
+	} catch(...) {
+		return RetT {};
+	}
+	if(!cfg) {
+		return RetT {};
+	}
+
+	try {
+		RetT ret {};
+		if(cfg->type == type) {
+			const auto value = reinterpret_cast<ConfigT>(cfg)->value;
+			if constexpr(std::is_pointer_v<std::decay_t<decltype(value)>>) {
+				if(value) {
+					ret = RetT(value);
+				}
+			} else {
+				ret = static_cast<RetT>(value);
+			}
+		}
+		releaseValue(owner, cfg);
+		return ret;
+	} catch(...) {
+		releaseValue(owner, cfg);
+		return RetT {};
+	}
 }
 
 } // namespace dcapi

@@ -1,0 +1,87 @@
+# Distribution and packaging output
+/dist/
+/packaging/info_generated.xml
+
+# MinGW build output
+/projects/make/build-*/
+
+# Visual Studio build output and local state
+/.vs/
+**/.vs/
+/projects/vs2022/[Dd]ebug/
+/projects/vs2022/[Rr]elease/
+/projects/vs2022/x64/
+/projects/vs2022/x86/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+*.sdf
+*.opensdf
+*.ipch
+
+# Compiler and linker artifacts
+*.a
+*.d
+*.dbg
+*.dll
+*.dylib
+*.exe
+*.exp
+*.gch
+*.iobj
+*.ipdb
+*.ilk
+*.lib
+*.lo
+*.o
+*.obj
+*.pdb
+*.pch
+*.res
+*.so
+*.tlog
+*.lastbuildstate
+*.recipe
+
+# Test and coverage output
+/TestResults/
+/Testing/
+*.gcda
+*.gcno
+*.gcov
+*.profraw
+*.profdata
+
+# Generated documentation
+/doc/chm/
+/doc/html/
+/doc/latex/
+/doc/pdf/
+
+# Editor and IDE metadata
+/.idea/
+/.vscode/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs, caches, and temporary files
+*.bak
+*.cache
+*.log
+*.orig
+*.temp
+*.tmp
+*.trace
+*.zip

@@ -27,11 +27,16 @@ namespace dcapi {
 DCTaggerPtr Tagger::tagger;
 
 bool Tagger::init() {
-	if(!Core::handle()) { return false; }
+	if(!Core::handle() || !Core::handle()->query_interface) { return false; }
 	init(reinterpret_cast<DCTaggerPtr>(Core::handle()->query_interface(DCINTF_DCPP_TAGGER, DCINTF_DCPP_TAGGER_VER)));
 	return tagger;
 }
 void Tagger::init(DCTaggerPtr coreTagger) { tagger = coreTagger; }
+void Tagger::reset() noexcept {
+	auto old = tagger;
+	tagger = nullptr;
+	Core::releaseInterface(reinterpret_cast<DCInterfacePtr>(old));
+}
 DCTaggerPtr Tagger::handle() { return tagger; }
 
 } // namespace dcapi

@@ -37,6 +37,7 @@ class Util
 public:
 	static bool init();
 	static void init(DCUtilsPtr coreUtils);
+	static void reset() noexcept;
 	static DCUtilsPtr handle();
 
 #ifdef _UNICODE

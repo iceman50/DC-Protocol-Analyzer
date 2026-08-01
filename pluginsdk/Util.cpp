@@ -24,41 +24,78 @@
 
 namespace dcapi {
 
+namespace {
+
+template<typename OutputString, typename InputString, typename Converter>
+OutputString convertString(const InputString& input, Converter converter) {
+	if(input.empty()) {
+		return OutputString();
+	}
+
+	try {
+		OutputString result(input.size(), typename OutputString::value_type {});
+		auto size = converter(result.data(), input.data(), result.size());
+		if(size > result.max_size()) {
+			return OutputString();
+		}
+		if(size > result.size()) {
+			result.resize(size);
+			const auto written = converter(result.data(), input.data(), result.size());
+			if(written > result.size()) {
+				return OutputString();
+			}
+			size = written;
+		}
+		result.resize(size);
+		return result;
+	} catch(...) {
+		return OutputString();
+	}
+}
+
+} // unnamed namespace
+
 DCUtilsPtr Util::utils;
 
 bool Util::init() {
-	if(!Core::handle()) { return false; }
-	init(reinterpret_cast<DCUtilsPtr>(Core::handle()->query_interface(DCINTF_DCPP_UTILS, DCINTF_DCPP_UTILS_VER)));
-	return utils;
+	auto core = Core::handle();
+	if(!core || !core->query_interface) {
+		return false;
+	}
+	init(reinterpret_cast<DCUtilsPtr>(
+		core->query_interface(DCINTF_DCPP_UTILS, DCINTF_DCPP_UTILS_VER)));
+	return utils && utils->to_utf8 && utils->from_utf8 &&
+		utils->utf8_to_wcs && utils->wcs_to_utf8;
 }
 void Util::init(DCUtilsPtr coreUtils) { utils = coreUtils; }
+void Util::reset() noexcept {
+	auto old = utils;
+	utils = nullptr;
+	Core::releaseInterface(reinterpret_cast<DCInterfacePtr>(old));
+}
 DCUtilsPtr Util::handle() { return utils; }
 
 #ifdef _UNICODE
 string Util::fromT(const wstring& str) {
-	string res;
-	if(str.empty())
-		return res;
-	auto n = str.size() * 3 / 2;
-	res.resize(n);
-	res.resize(utils->wcs_to_utf8(&res[0], &str[0], n));
-	if(res.size() > n) {
-		utils->wcs_to_utf8(&res[0], &str[0], res.size());
+	auto api = utils;
+	if(!api || !api->wcs_to_utf8) {
+		return string();
 	}
-	return res;
+	return convertString<string>(str,
+		[api](char* output, const wchar_t* input, size_t size) {
+			return api->wcs_to_utf8(output, input, size);
+		});
 }
 
 wstring Util::toT(const string& str) {
-	wstring res;
-	if(str.empty())
-		return res;
-	auto n = str.size();
-	res.resize(n);
-	res.resize(utils->utf8_to_wcs(&res[0], &str[0], n));
-	if(res.size() > n) {
-		utils->utf8_to_wcs(&res[0], &str[0], res.size());
+	auto api = utils;
+	if(!api || !api->utf8_to_wcs) {
+		return wstring();
 	}
-	return res;
+	return convertString<wstring>(str,
+		[api](wchar_t* output, const char* input, size_t size) {
+			return api->utf8_to_wcs(output, input, size);
+		});
 }
 
 string Util::fromT(const string& str) { return str; }
@@ -66,29 +103,25 @@ wstring Util::toT(const wstring& str) { return str; }
 #endif // _UNICODE
 
 string Util::fromUtf8(const string& str) {
-	string res;
-	if(str.empty())
-		return res;
-	auto n = str.size() * 3 / 2;
-	res.resize(n);
-	res.resize(utils->from_utf8(&res[0], &str[0], n));
-	if(res.size() > n) {
-		utils->from_utf8(&res[0], &str[0], res.size());
+	auto api = utils;
+	if(!api || !api->from_utf8) {
+		return string();
 	}
-	return res;
+	return convertString<string>(str,
+		[api](char* output, const char* input, size_t size) {
+			return api->from_utf8(output, input, size);
+		});
 }
 
 string Util::toUtf8(const string& str) {
-	string res;
-	if(str.empty())
-		return res;
-	auto n = str.size();
-	res.resize(n);
-	res.resize(utils->to_utf8(&res[0], &str[0], n));
-	if(res.size() > n) {
-		utils->to_utf8(&res[0], &str[0], res.size());
+	auto api = utils;
+	if(!api || !api->to_utf8) {
+		return string();
 	}
-	return res;
+	return convertString<string>(str,
+		[api](char* output, const char* input, size_t size) {
+			return api->to_utf8(output, input, size);
+		});
 }
 
 } // namespace dcapi

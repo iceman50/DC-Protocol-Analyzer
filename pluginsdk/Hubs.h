@@ -30,6 +30,7 @@ class Hubs
 public:
 	static bool init();
 	static void init(DCHubPtr coreHubs);
+	static void reset() noexcept;
 	static DCHubPtr handle();
 
 private:

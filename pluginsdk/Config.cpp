@@ -28,21 +28,42 @@ DCConfigPtr Config::config;
 string Config::guid;
 
 bool Config::init(string pluginGuid) {
-	if(!Core::handle()) { return false; }
-	init(reinterpret_cast<DCConfigPtr>(Core::handle()->query_interface(DCINTF_CONFIG, DCINTF_CONFIG_VER)), move(pluginGuid));
-	return config;
+	auto core = Core::handle();
+	if(!core || !core->query_interface || pluginGuid.empty()) {
+		return false;
+	}
+	init(reinterpret_cast<DCConfigPtr>(
+		core->query_interface(DCINTF_CONFIG, DCINTF_CONFIG_VER)),
+		move(pluginGuid));
+	return config && config->set_cfg && config->get_cfg && config->release &&
+		config->get_path && config->get_install_path;
 }
 void Config::init(DCConfigPtr coreConfig, string pluginGuid) { config = coreConfig; guid = move(pluginGuid); }
+void Config::reset() noexcept {
+	auto old = config;
+	config = nullptr;
+	guid.clear();
+	Core::releaseInterface(reinterpret_cast<DCInterfacePtr>(old));
+}
 DCConfigPtr Config::handle() { return config; }
 
-void Config::setConfig(const char* name, const char* value) { setConfig<ConfigStr>(name, CFG_TYPE_STRING, value); }
+void Config::setConfig(const char* name, const char* value) {
+	setConfig<ConfigStr>(name, CFG_TYPE_STRING, value ? value : "");
+}
 void Config::setConfig(const char* name, const string& value) { setConfig(name, value.c_str()); }
 void Config::setConfig(const char* name, bool value) { setConfig<ConfigBool>(name, CFG_TYPE_BOOL, value ? True : False); };
 void Config::setConfig(const char* name, int32_t value) { setConfig<ConfigInt>(name, CFG_TYPE_INT, value); }
 void Config::setConfig(const char* name, int64_t value) { setConfig<ConfigInt64>(name, CFG_TYPE_INT64, value); }
 void Config::removeConfig(const char* name) {
+	auto owner = config;
+	if(!owner || !owner->set_cfg || !name || !*name || guid.empty()) {
+		return;
+	}
 	ConfigValue val = { CFG_TYPE_REMOVE };
-	config->set_cfg(guid.c_str(), name, reinterpret_cast<ConfigValuePtr>(&val));
+	try {
+		owner->set_cfg(guid.c_str(), name, reinterpret_cast<ConfigValuePtr>(&val));
+	} catch(...) {
+	}
 }
 
 string Config::getConfig(const char* name) { return getConfig<ConfigStrPtr, string>(name, CFG_TYPE_STRING); }
@@ -50,21 +71,82 @@ bool Config::getBoolConfig(const char* name) { return getConfig<ConfigBoolPtr, b
 int32_t Config::getIntConfig(const char* name) { return getConfig<ConfigIntPtr, int32_t>(name, CFG_TYPE_INT); }
 int64_t Config::getInt64Config(const char* name) { return getConfig<ConfigInt64Ptr, int64_t>(name, CFG_TYPE_INT64); }
 
-ConfigValuePtr Config::getCoreConfig(const char* name) { return config->get_cfg("CoreSetup", name, CFG_TYPE_UNKNOWN); }
-void Config::freeCoreConfig(ConfigValuePtr value) { config->release(value); }
+ConfigValuePtr Config::getCoreConfig(const char* name) {
+	auto owner = config;
+	if(!owner || !owner->get_cfg || !owner->release || !name || !*name) {
+		return nullptr;
+	}
+	try {
+		return owner->get_cfg("CoreSetup", name, CFG_TYPE_UNKNOWN);
+	} catch(...) {
+		return nullptr;
+	}
+}
+void Config::freeCoreConfig(ConfigValuePtr value) noexcept {
+	releaseValue(config, value);
+}
+
+void Config::releaseValue(DCConfigPtr owner, ConfigValuePtr value) noexcept {
+	if(owner && owner->release && value) {
+		try {
+			owner->release(value);
+		} catch(...) {
+		}
+	}
+}
 
 string Config::getPath(PathType type) {
-	auto cfg = config->get_path(type);
-	string ret(cfg->value);
-	config->release(reinterpret_cast<ConfigValuePtr>(cfg));
-	return ret;
+	auto owner = config;
+	if(!owner || !owner->get_path || !owner->release) {
+		return string();
+	}
+	ConfigStrPtr cfg = nullptr;
+	try {
+		cfg = owner->get_path(type);
+	} catch(...) {
+		return string();
+	}
+	if(!cfg) {
+		return string();
+	}
+	try {
+		string ret;
+		if(cfg->type == CFG_TYPE_STRING && cfg->value) {
+			ret = cfg->value;
+		}
+		releaseValue(owner, reinterpret_cast<ConfigValuePtr>(cfg));
+		return ret;
+	} catch(...) {
+		releaseValue(owner, reinterpret_cast<ConfigValuePtr>(cfg));
+		return string();
+	}
 }
 
 string Config::getInstallPath() {
-	auto cfg = config->get_install_path(guid.c_str());
-	string ret(cfg->value);
-	config->release(reinterpret_cast<ConfigValuePtr>(cfg));
-	return ret;
+	auto owner = config;
+	if(!owner || !owner->get_install_path || !owner->release || guid.empty()) {
+		return string();
+	}
+	ConfigStrPtr cfg = nullptr;
+	try {
+		cfg = owner->get_install_path(guid.c_str());
+	} catch(...) {
+		return string();
+	}
+	if(!cfg) {
+		return string();
+	}
+	try {
+		string ret;
+		if(cfg->type == CFG_TYPE_STRING && cfg->value) {
+			ret = cfg->value;
+		}
+		releaseValue(owner, reinterpret_cast<ConfigValuePtr>(cfg));
+		return ret;
+	} catch(...) {
+		releaseValue(owner, reinterpret_cast<ConfigValuePtr>(cfg));
+		return string();
+	}
 }
 
 } // namespace dcapi

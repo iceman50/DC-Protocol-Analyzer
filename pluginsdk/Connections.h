@@ -30,6 +30,7 @@ class Connections
 public:
 	static bool init();
 	static void init(DCConnectionPtr coreConnections);
+	static void reset() noexcept;
 	static DCConnectionPtr handle();
 
 private:

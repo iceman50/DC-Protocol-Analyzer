@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Deprecated compatibility file. The supported release toolchain is
+     MinGW-w64 x64 through build_dist.ps1. -->
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <TaskWin32WinNt Condition="'$(TaskWin32WinNt)' == ''">0x601</TaskWin32WinNt>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>DWT_SHARED;_WIN32_WINNT=$(TaskWin32WinNt);WINVER=$(TaskWin32WinNt);_WIN32_IE=0x0A00;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>comctl32.lib;comdlg32.lib;shlwapi.lib;ole32.lib;oleaut32.lib;uuid.lib;shell32.lib;advapi32.lib;uxtheme.lib;dwmapi.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkIncremental Condition="'$(Configuration)'=='Release'">false</LinkIncremental>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

@@ -37,6 +37,7 @@ class DataAccess
 public:
 	static bool init();
 	static void init(DCDataAccessPtr coreDataAccessor);
+	static void reset() noexcept;
 	static DCDataAccessPtr handle();
 
 private:

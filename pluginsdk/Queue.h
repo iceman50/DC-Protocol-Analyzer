@@ -30,6 +30,7 @@ class Queue
 public:
 	static bool init();
 	static void init(DCQueuePtr coreQueue);
+	static void reset() noexcept;
 	static DCQueuePtr handle();
 
 private:

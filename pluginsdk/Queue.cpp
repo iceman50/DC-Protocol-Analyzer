@@ -27,11 +27,16 @@ namespace dcapi {
 DCQueuePtr Queue::queue;
 
 bool Queue::init() {
-	if(!Core::handle()) { return false; }
+	if(!Core::handle() || !Core::handle()->query_interface) { return false; }
 	init(reinterpret_cast<DCQueuePtr>(Core::handle()->query_interface(DCINTF_DCPP_QUEUE, DCINTF_DCPP_QUEUE_VER)));
 	return queue;
 }
 void Queue::init(DCQueuePtr coreQueue) { queue = coreQueue; }
+void Queue::reset() noexcept {
+	auto old = queue;
+	queue = nullptr;
+	Core::releaseInterface(reinterpret_cast<DCInterfacePtr>(old));
+}
 DCQueuePtr Queue::handle() { return queue; }
 
 } // namespace dcapi

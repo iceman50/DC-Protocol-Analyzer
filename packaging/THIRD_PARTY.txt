@@ -1,0 +1,25 @@
+Protocol Analyzer third-party notices
+=====================================
+
+LibDWT
+------
+
+Version: 0.883.1
+Source: https://github.com/iceman50/LibDWT.git
+Imported commit: 5f8b9957ca35323b8dd89dd4cf7eb0db7c058882
+Vendored location: dwt/
+
+The vendored tree contains Protocol Analyzer-specific integration and UI fixes. The
+source archive retains the copyright and license headers of each LibDWT file.
+The LibDWT BSD-style notice is distributed as dwt/License.txt and as
+LibDWT-License.txt in binary extension packages. The upstream repository also
+declares GNU GPL version 2 at repository level; the complete GPL version 2 text
+is distributed as gpl-2.0.txt and GPL-2.0.txt, respectively.
+
+MinGW-w64 and GCC runtimes
+--------------------------
+
+MinGW-w64 system headers/libraries and GCC runtime components may be linked
+into MinGW builds under their respective licenses and applicable runtime
+exceptions. Toolchain provenance and hashes are recorded in each package's
+BUILD-PROVENANCE.txt.

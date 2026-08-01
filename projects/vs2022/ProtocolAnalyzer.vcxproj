@@ -1,0 +1,431 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B5273AD8-8E53-46CD-8797-65FE814DBFB0}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>ProtocolAnalyzer</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>ProtocolAnalyzer</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>ProtocolAnalyzer</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>ProtocolAnalyzer</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>DWT_SHARED;_WIN32_WINNT=0x0601;WINVER=0x0601;_WIN32_IE=0x0A00;NOMINMAX;STRICT;WIN32_LEAN_AND_MEAN;WIN32;_WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../dwt/include;../../</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4100;4127;4244;4307;4324;4510;4512;4610;4706;4800;4996;4505</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalOptions>/EXPORT:pluginInit %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>comctl32.lib;comdlg32.lib;shlwapi.lib;ole32.lib;oleaut32.lib;uuid.lib;shell32.lib;advapi32.lib;uxtheme.lib;dwmapi.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
+      <OptimizeReferences>false</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>DWT_SHARED;_WIN32_WINNT=0x0601;WINVER=0x0601;_WIN32_IE=0x0A00;NOMINMAX;STRICT;WIN32_LEAN_AND_MEAN;WIN32;_WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../dwt/include;../../</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4100;4244;4702;4996;5054;4800;4505</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalOptions>/EXPORT:pluginInit %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>comctl32.lib;comdlg32.lib;shlwapi.lib;ole32.lib;oleaut32.lib;uuid.lib;shell32.lib;advapi32.lib;uxtheme.lib;dwmapi.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
+      <OptimizeReferences>false</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>DWT_SHARED;_WIN32_WINNT=0x0601;WINVER=0x0601;_WIN32_IE=0x0A00;NOMINMAX;STRICT;WIN32_LEAN_AND_MEAN;WIN32;_WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>../../dwt/include;../../</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4100;4127;4244;4307;4324;4456;4510;4512;4610;4706;4800;4505</DisableSpecificWarnings>
+      <AdditionalOptions>/FS /D "_CRT_SECURE_NO_WARNINGS" /D "_HAS_DEPRECATED_ALLOCATOR_MEMBERS" %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalOptions>/EXPORT:pluginInit %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>comctl32.lib;comdlg32.lib;shlwapi.lib;ole32.lib;oleaut32.lib;uuid.lib;shell32.lib;advapi32.lib;uxtheme.lib;dwmapi.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>DWT_SHARED;_WIN32_WINNT=0x0601;WINVER=0x0601;_WIN32_IE=0x0A00;NOMINMAX;STRICT;WIN32_LEAN_AND_MEAN;WIN32;_WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>../../dwt/include;../../</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4063;4100;4127;4244;4267;4307;4324;4458;4505;4510;4512;4610;4706;4800;4505</DisableSpecificWarnings>
+      <AdditionalOptions>/FS /D "_CRT_SECURE_NO_WARNINGS" /D "_HAS_DEPRECATED_ALLOCATOR_MEMBERS" %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalOptions>/EXPORT:pluginInit %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>comctl32.lib;comdlg32.lib;wtsapi32.lib;shlwapi.lib;winmm.lib;ole32.lib;oleaut32.lib;uuid.lib;shell32.lib;advapi32.lib;uxtheme.lib;dwmapi.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*';%(AdditionalManifestDependencies)</AdditionalManifestDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\dwt\src\Application.cpp" />
+    <ClCompile Include="..\..\dwt\src\Bitmap.cpp" />
+    <ClCompile Include="..\..\dwt\src\Brush.cpp" />
+    <ClCompile Include="..\..\dwt\src\CanvasClasses.cpp" />
+    <ClCompile Include="..\..\dwt\src\Clipboard.cpp" />
+    <ClCompile Include="..\..\dwt\src\CommandLine.cpp" />
+    <ClCompile Include="..\..\dwt\src\Dispatcher.cpp" />
+    <ClCompile Include="..\..\dwt\src\DWTException.cpp" />
+    <ClCompile Include="..\..\dwt\src\Events.cpp" />
+    <ClCompile Include="..\..\dwt\src\Font.cpp" />
+    <ClCompile Include="..\..\dwt\src\Icon.cpp" />
+    <ClCompile Include="..\..\dwt\src\ImageList.cpp" />
+    <ClCompile Include="..\..\dwt\src\LibraryLoader.cpp" />
+    <ClCompile Include="..\..\dwt\src\Message.cpp" />
+    <ClCompile Include="..\..\dwt\src\Pen.cpp" />
+    <ClCompile Include="..\..\dwt\src\Point.cpp" />
+    <ClCompile Include="..\..\dwt\src\Rectangle.cpp" />
+    <ClCompile Include="..\..\dwt\src\Region.cpp" />
+    <ClCompile Include="..\..\dwt\src\Taskbar.cpp" />
+    <ClCompile Include="..\..\dwt\src\Texts.cpp" />
+    <ClCompile Include="..\..\dwt\src\Theme.cpp" />
+    <ClCompile Include="..\..\dwt\src\util\DateTimeUtil.cpp" />
+    <ClCompile Include="..\..\dwt\src\util\GDI.cpp" />
+    <ClCompile Include="..\..\dwt\src\util\RegKey.cpp" />
+    <ClCompile Include="..\..\dwt\src\util\StringUtils.cpp" />
+    <ClCompile Include="..\..\dwt\src\util\TimeSpan.cpp" />
+    <ClCompile Include="..\..\dwt\src\util\win32\AccessibilityProvider.cpp" />
+    <ClCompile Include="..\..\dwt\src\util\win32\ApiHelpers.cpp" />
+    <ClCompile Include="..\..\dwt\src\util\win32\Dpi.cpp" />
+    <ClCompile Include="..\..\dwt\src\util\win32\FileDialog.cpp" />
+    <ClCompile Include="..\..\dwt\src\util\win32\Version.cpp" />
+    <ClCompile Include="..\..\dwt\src\Widget.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Button.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\CheckBox.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\ColorDialog.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\ComboBox.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Control.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\DateTime.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\FolderDialog.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\FontDialog.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Grid.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\GroupBox.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Header.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Label.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Link.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\LoadDialog.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\MDIChild.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\MDIFrame.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\MDIParent.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Menu.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\MessageBox.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\MonthCalendar.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\ModalDialog.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\ModelessDialog.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Notification.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\ProgressBar.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\RadioButton.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Rebar.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\RichTextBox.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\SaveDialog.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\ScrolledContainer.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Slider.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Spinner.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Splitter.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\SplitterContainer.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\StatusBar.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Table.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\TableTree.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\TabView.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\TaskDialog.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\TextBox.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\ToolBar.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\ToolTip.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Tree.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\VirtualTree.cpp" />
+    <ClCompile Include="..\..\dwt\src\widgets\Window.cpp" />
+    <ClCompile Include="..\..\pluginsdk\Config.cpp" />
+    <ClCompile Include="..\..\pluginsdk\Connections.cpp" />
+    <ClCompile Include="..\..\pluginsdk\Core.cpp" />
+    <ClCompile Include="..\..\pluginsdk\DataAccess.cpp" />
+    <ClCompile Include="..\..\pluginsdk\Hooks.cpp" />
+    <ClCompile Include="..\..\pluginsdk\Hubs.cpp" />
+    <ClCompile Include="..\..\pluginsdk\Logger.cpp" />
+    <ClCompile Include="..\..\pluginsdk\Queue.cpp" />
+    <ClCompile Include="..\..\pluginsdk\Tagger.cpp" />
+    <ClCompile Include="..\..\pluginsdk\UI.cpp" />
+    <ClCompile Include="..\..\pluginsdk\Util.cpp" />
+    <ClCompile Include="..\..\src\CustomTitleBar.cpp" />
+    <ClCompile Include="..\..\src\GUI.cpp" />
+    <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\Plugin.cpp" />
+    <ClCompile Include="..\..\src\ProtocolAnalyzer.cpp" />
+    <ClCompile Include="..\..\src\SettingsDlg.cpp" />
+    <ClCompile Include="..\..\src\stdafx.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\dwt\include\dwt\Accessibility.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Application.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Activate.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Border.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Caption.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Child.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Children.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Clickable.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Closeable.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Collection.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Colorable.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Columns.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Command.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\ContextMenu.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\CustomDraw.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Data.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Dialog.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\DragDrop.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Enabled.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\EraseBackground.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\FileFilter.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Fonts.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Help.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Keyboard.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\MinMax.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Mouse.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Painting.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Raw.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Scrollable.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Selection.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Sizable.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Timer.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Update.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\aspects\Visible.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Atom.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\CanvasClasses.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Clipboard.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\CommandLine.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Cursor.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Dispatcher.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Dispatchers.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\doxygen.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\DWTException.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\dwt_dwmapi.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\dwt_vsstyle.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\dwt_vssym32.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Events.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\forward.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\GCCHeaders.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\LibraryLoader.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Message.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Point.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Rectangle.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Bitmap.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Brush.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Font.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Handle.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Icon.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\resources\ImageList.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Pen.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\resources\Region.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Taskbar.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Texts.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Theme.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\tstring.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\check.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\DateTimeUtil.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\GDI.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\HoldRedraw.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\HoldResize.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\IntrusivePtr.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\RegKey.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\StringConversion.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\StringUtils.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\TimeSpan.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\tstream.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\win32\AccessibilityProvider.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\win32\ApiHelpers.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\win32\Dpi.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\win32\FileDialog.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\win32\Version.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\util\xCeptionSmartUtilities.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\VCDesktopHeaders.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Version.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\Widget.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\WidgetCreator.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Button.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\CheckBox.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ColorDialog.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Column.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ComboBox.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Composite.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Container.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Control.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\DateTime.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\FolderDialog.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\FontDialog.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Frame.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Grid.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\GroupBox.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Header.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Label.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Link.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\LoadDialog.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\MDIChild.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\MDIFrame.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\MDIParent.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Menu.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\MessageBox.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\MonthCalendar.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ModalDialog.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ModelessDialog.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Notification.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ProgressBar.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\RadioButton.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Rebar.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\RichTextBox.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\SaveDialog.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ScrolledContainer.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Slider.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Spinner.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Splitter.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\SplitterContainer.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\StatusBar.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Table.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\TaskDialog.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\TableTree.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\TabView.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\TextBox.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ToolBar.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\ToolTip.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Tree.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\VirtualTree.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\widgets\Window.h" />
+    <ClInclude Include="..\..\dwt\include\dwt\WindowsHeaders.h" />
+    <ClInclude Include="..\..\pluginsdk\Config.h" />
+    <ClInclude Include="..\..\pluginsdk\Connections.h" />
+    <ClInclude Include="..\..\pluginsdk\Core.h" />
+    <ClInclude Include="..\..\pluginsdk\DataAccess.h" />
+    <ClInclude Include="..\..\pluginsdk\Hooks.h" />
+    <ClInclude Include="..\..\pluginsdk\Hubs.h" />
+    <ClInclude Include="..\..\pluginsdk\Logger.h" />
+    <ClInclude Include="..\..\pluginsdk\PluginDefs.h" />
+    <ClInclude Include="..\..\pluginsdk\Queue.h" />
+    <ClInclude Include="..\..\pluginsdk\Tagger.h" />
+    <ClInclude Include="..\..\pluginsdk\UI.h" />
+    <ClInclude Include="..\..\pluginsdk\Util.h" />
+    <ClInclude Include="..\..\src\CustomTitleBar.h" />
+    <ClInclude Include="..\..\src\GUI.h" />
+    <ClInclude Include="..\..\src\Plugin.h" />
+    <ClInclude Include="..\..\src\ProtocolAnalyzer.h" />
+    <ClInclude Include="..\..\src\resource.h" />
+    <ClInclude Include="..\..\src\SettingsDlg.h" />
+    <ClInclude Include="..\..\src\stdafx.h" />
+    <ClInclude Include="..\..\src\TableColors.h" />
+    <ClInclude Include="..\..\src\UIStyles.h" />
+    <ClInclude Include="..\..\src\version.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\src\resource.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

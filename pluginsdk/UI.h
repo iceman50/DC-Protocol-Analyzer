@@ -21,7 +21,10 @@
 #ifndef PLUGINSDK_UI_H
 #define PLUGINSDK_UI_H
 
+#include <condition_variable>
 #include <functional>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 
@@ -39,22 +42,32 @@ class UI
 public:
 	static bool init(string pluginGuid);
 	static void init(DCUIPtr coreUI, string pluginGuid);
+	static void reset() noexcept;
 	static DCUIPtr handle();
 
 	typedef function<void ()> Command;
-	static void addCommand(string name, Command command, string icon);
-	static void removeCommand(const string& name);
-	static void clearCommands();
+	static bool addCommand(string name, Command command, string icon);
+	static bool removeCommand(const string& name) noexcept;
+	static bool inCallback() noexcept;
+	static void clearCommands() noexcept;
 
 private:
+	struct CommandEntry;
 	static void DCAPI commandCallback(const char* name);
 
 	static DCUIPtr ui;
 
 	static string guid;
 
-	// command name -> pair<callback, icon>
-	static unordered_map<string, pair<UI::Command, string>> commands;
+	// command name -> callback state
+	static unordered_map<string, std::shared_ptr<CommandEntry>> commands;
+	static std::mutex commandsMutex;
+	static std::condition_variable commandsChanged;
+	static size_t registrationsInProgress;
+	static size_t removalsInProgress;
+	static size_t activeCallbacks;
+	static bool stopping;
+	static bool clearing;
 };
 
 } // namespace dcapi

@@ -25,11 +25,46 @@ namespace dcapi {
 DCCorePtr Core::core;
 string Core::appName;
 
-void Core::init(DCCorePtr corePtr) {
+bool Core::init(DCCorePtr corePtr) {
+	core = nullptr;
+	appName.clear();
+	if(!corePtr || !corePtr->query_interface || !corePtr->release_interface) {
+		return false;
+	}
 	core = corePtr;
-	appName = core->host_name();
+
+	try {
+		if(core->host_name) {
+			const auto name = core->host_name();
+			if(name) {
+				appName = name;
+			}
+		}
+		return true;
+	} catch(...) {
+		core = nullptr;
+		appName.clear();
+		return false;
+	}
+}
+
+void Core::reset() noexcept {
+	core = nullptr;
+	appName.clear();
 }
 
 DCCorePtr Core::handle() { return core; }
+
+bool Core::releaseInterface(DCInterfacePtr interfacePtr) noexcept {
+	if(!interfacePtr || !core || !core->release_interface) {
+		return interfacePtr == nullptr;
+	}
+
+	try {
+		return core->release_interface(reinterpret_cast<intfHandle>(interfacePtr)) == True;
+	} catch(...) {
+		return false;
+	}
+}
 
 } // namespace dcapi
