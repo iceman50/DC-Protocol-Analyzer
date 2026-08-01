@@ -1003,7 +1003,7 @@ int main(int argc, char** argv) {
 	expect(uiCommandCallbackNamesAreDistinct(),
 		"UI commands expose distinct persistent names to the host callbacks");
 	pumpMessages(std::chrono::milliseconds(50));
-	const auto installedWindow = findTopLevelWindow(L"Protocol Monitor");
+	const auto installedWindow = findTopLevelWindow(L"Protocol Analyzer");
 	expect(installedWindow != nullptr && ::IsWindowVisible(installedWindow),
 		"runtime installation opens the protocol-monitor window");
 	expect(pluginMain(ON_LOAD_RUNTIME, &coreInterface, nullptr) == False,
@@ -1176,7 +1176,7 @@ int main(int argc, char** argv) {
 			"mock host invokes Show with its retained command-name pointer");
 		pumpMessages(std::chrono::milliseconds(400));
 
-		const auto pluginWindow = findTopLevelWindow(L"Protocol Monitor");
+		const auto pluginWindow = findTopLevelWindow(L"Protocol Analyzer");
 		expect(pluginWindow != nullptr && ::IsWindowVisible(pluginWindow),
 			"Show command creates a visible DWT protocol-monitor window");
 		if(pluginWindow) {
@@ -1503,7 +1503,7 @@ int main(int argc, char** argv) {
 			pumpMessages(std::chrono::milliseconds(20));
 			expect(pluginWindow && ::IsWindow(pluginWindow) &&
 				::IsWindowVisible(pluginWindow) &&
-				findTopLevelWindow(L"Protocol Monitor") == pluginWindow,
+				findTopLevelWindow(L"Protocol Analyzer") == pluginWindow,
 				"Show reopens the same caption-closed monitor HWND");
 		}
 
@@ -1517,7 +1517,7 @@ int main(int argc, char** argv) {
 		pumpMessages(std::chrono::milliseconds(20));
 		expect(pluginWindow && ::IsWindow(pluginWindow) &&
 			::IsWindowVisible(pluginWindow) &&
-			findTopLevelWindow(L"Protocol Monitor") == pluginWindow,
+			findTopLevelWindow(L"Protocol Analyzer") == pluginWindow,
 			"Show reopens the same system-closed monitor HWND");
 
 		expect(invokeUiCommand("Hide the dialog"),
@@ -1591,7 +1591,7 @@ int main(int argc, char** argv) {
 	expect(pluginMain(ON_LOAD_RUNTIME, &coreInterface, nullptr) == True,
 		"plugin reloads after a failed initialization");
 	pumpMessages(std::chrono::milliseconds(50));
-	const auto reloadedWindow = findTopLevelWindow(L"Protocol Monitor");
+	const auto reloadedWindow = findTopLevelWindow(L"Protocol Analyzer");
 	expect(reloadedWindow != nullptr && ::IsWindowVisible(reloadedWindow),
 		"runtime activation restores the protocol-monitor window");
 	expect(pluginMain(ON_UNLOAD, &coreInterface, nullptr) == True,
