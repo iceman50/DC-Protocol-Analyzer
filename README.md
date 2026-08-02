@@ -39,7 +39,7 @@ The virtual table displays:
 - remote address and port;
 - hub or peer identity;
 - bounded summary; and
-- redacted raw message.
+- sanitized raw message, with sensitive values redacted by default.
 
 ADC line-feed keep-alives are identified as valid `KEEPALIVE` control traffic,
 including the delimiter-stripped form supplied by the host for incoming lines.
@@ -92,7 +92,7 @@ the application to an unbounded general-purpose regex engine.
 
 The context menu and action bar provide:
 
-- copy selected redacted messages;
+- copy selected captured messages;
 - copy the decoded analysis;
 - remove selected messages;
 - select all visible messages;
@@ -119,6 +119,8 @@ The interface includes:
 - reset for one color or the complete palette;
 - configurable pending-message capture queue capacity;
 - configurable timestamp format;
+- optional display of sensitive values for protocol debugging, with redaction
+  enabled by default;
 - optional UTF-8 protocol logging; and
 - DPI-aware, accessible Windows controls; and
 - a fully client-drawn, theme-aware window frame on Windows 7 and later that
@@ -130,10 +132,10 @@ the host configuration interface.
 
 ### Logging
 
-Optional file logging writes only redacted message data in UTF-8. Logs rotate
-at 10 MiB and retain three backups. Log batches, paths, messages, and error
-reporting are bounded, and logging failures are displayed in the monitor
-without interrupting capture.
+Optional file logging writes sanitized message data in UTF-8 and follows the
+sensitive-value redaction setting. Logs rotate at 10 MiB and retain three
+backups. Log batches, paths, messages, and error reporting are bounded, and
+logging failures are displayed in the monitor without interrupting capture.
 
 ## ADC analysis
 
@@ -247,10 +249,11 @@ Reference: [NMDC protocol documentation](https://dc-protocols.github.io/NMDC.htm
 Protocol Analyzer treats every captured byte as untrusted.
 
 - ADC private IDs (`PD`), password responses, and SUDP keys (`KY`) are
-  redacted.
-- NMDC passwords and credential-like vendor commands are redacted.
-- Redaction happens before table display, inspector rendering, clipboard
-  output, history retention, or file logging.
+  redacted by default.
+- NMDC passwords and credential-like vendor commands are redacted by default.
+- Redaction normally happens before table display, inspector rendering,
+  clipboard output, history retention, or file logging. A diagnostic setting
+  can explicitly disable it for newly captured traffic and logs.
 - ZLIB, ZPipe, compressed blocks, and encrypted UDP payloads remain opaque.
   The plugin never decompresses or executes captured content.
 - Control characters are escaped before presentation.

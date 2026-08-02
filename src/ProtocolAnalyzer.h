@@ -31,6 +31,10 @@ enum class Status {
 	Invalid
 };
 
+struct AnalysisOptions {
+	bool redactSensitiveValues = true;
+};
+
 struct Field {
 	std::string code;
 	std::string name;
@@ -52,6 +56,7 @@ struct Result {
 	Status status = Status::Valid;
 	bool known = true;
 	bool sensitive = false;
+	bool redactionEnabled = true;
 	/*
 	 * A BLOM HSND command is followed by an opaque, unframed byte stream.
 	 * The capture layer must correlate this hint by connection and direction
@@ -72,9 +77,12 @@ struct Result {
  * Input is bounded again here even though the capture layer already imposes a
  * limit. Unknown commands are retained as structured warnings, never rejected
  * or executed. safeMessage is suitable for display, clipboard output, and
- * persistent logging; authentication/private identity values are redacted.
+ * persistent logging. Authentication/private identity values are redacted by
+ * default; callers may explicitly disable redaction for diagnostic use.
  */
 Result analyze(const std::string& displayedProtocol, const std::string& raw);
+Result analyze(const std::string& displayedProtocol, const std::string& raw,
+	const AnalysisOptions& options);
 
 /*
  * Build a display-safe result for a correlated opaque transfer payload.

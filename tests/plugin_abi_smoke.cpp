@@ -1036,6 +1036,7 @@ int main(int argc, char** argv) {
 	nmdcHub.url = "dchub://smoke.invalid";
 	nmdcHub.protocol = PROTOCOL_NMDC;
 	const string passwordSecret = "SMOKE_PASSWORD_MUST_NOT_LEAK";
+	const string diagnosticPasswordSecret = "SMOKE_PASSWORD_VISIBLE_FOR_DEBUG";
 	string passwordCommandText = "$MyPass " + passwordSecret + "|";
 	std::vector<char> passwordCommand(
 		passwordCommandText.begin(), passwordCommandText.end());
@@ -1327,6 +1328,46 @@ int main(int argc, char** argv) {
 				}
 			}
 
+			{
+				std::lock_guard<std::mutex> lock(stateMutex);
+				boolConfig[configKey(metadata.guid, "DisableRedaction")] = True;
+			}
+			const auto diagnosticCommandText =
+				string("$MyPass ") + diagnosticPasswordSecret + "|";
+			std::vector<char> diagnosticCommand(
+				diagnosticCommandText.begin(), diagnosticCommandText.end());
+			diagnosticCommand.push_back('\0');
+			fireHook(HOOK_NETWORK_HUB_IN, &nmdcHub, diagnosticCommand.data());
+			pumpMessages(std::chrono::milliseconds(400));
+			int diagnosticPasswordRow = -1;
+			const auto diagnosticItemCount = static_cast<int>(
+				::SendMessageW(listView, LVM_GETITEMCOUNT, 0, 0));
+			for(int row = 0; row < diagnosticItemCount; ++row) {
+				if(listViewText(listView, row, 10).find(
+						L"SMOKE_PASSWORD_VISIBLE_FOR_DEBUG") != std::wstring::npos)
+				{
+					diagnosticPasswordRow = row;
+					break;
+				}
+			}
+			expect(diagnosticPasswordRow >= 0,
+				"disable-redaction setting exposes sensitive values in new table rows");
+			if(diagnosticPasswordRow >= 0) {
+				ListView_SetItemState(
+					listView, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+				ListView_SetItemState(listView, diagnosticPasswordRow,
+					LVIS_SELECTED | LVIS_FOCUSED,
+					LVIS_SELECTED | LVIS_FOCUSED);
+				pumpMessages(std::chrono::milliseconds(20));
+				expect(windowText(inspector).find(
+						L"SMOKE_PASSWORD_VISIBLE_FOR_DEBUG") != std::wstring::npos,
+					"disable-redaction setting exposes sensitive values in the inspector");
+			}
+			{
+				std::lock_guard<std::mutex> lock(stateMutex);
+				boolConfig[configKey(metadata.guid, "DisableRedaction")] = False;
+			}
+
 			int richEditLiteralRow = -1;
 			int bloomRow = -1;
 			int smallBloomRow = -1;
@@ -1450,6 +1491,8 @@ int main(int argc, char** argv) {
 			expect(contents.find(passwordSecret) == string::npos &&
 				contents.find("<redacted>") != string::npos,
 				"persistent protocol logging redacts credential material");
+			expect(contents.find(diagnosticPasswordSecret) != string::npos,
+				"disable-redaction setting exposes sensitive values in protocol logs");
 			expect(contents.find(bloomSecret) == string::npos &&
 				contents.find(string("\x01\xfe", 2)) == string::npos &&
 				contents.find("BLOM payload omitted") != string::npos,

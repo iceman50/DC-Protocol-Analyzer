@@ -541,7 +541,8 @@ void addField(Result& result, string code, string name, string value,
 	}
 	result.fields.push_back(Field {
 		sanitize(code, 128), sanitize(name, 256),
-		sensitive ? string("<redacted>") : sanitize(value, MAX_FIELD_VALUE_BYTES),
+		sensitive && result.redactionEnabled ?
+			string("<redacted>") : sanitize(value, MAX_FIELD_VALUE_BYTES),
 		sensitive
 	});
 	result.sensitive = result.sensitive || sensitive;
@@ -986,7 +987,12 @@ void findNmdcSecurityMasks(string_view raw, std::vector<Span>& masks) {
 	}
 }
 
-string applyMasks(string_view raw, std::vector<Span> masks) {
+string applyMasks(string_view raw, std::vector<Span> masks,
+	bool redactionEnabled)
+{
+	if(!redactionEnabled) {
+		return sanitize(raw, MAX_ANALYZER_INPUT_BYTES + 1024);
+	}
 	masks.erase(std::remove_if(masks.begin(), masks.end(), [raw](const Span& mask) {
 		return mask.offset > raw.size() || mask.length > raw.size() - mask.offset;
 	}), masks.end());
@@ -1382,9 +1388,10 @@ void buildAdcSummary(Result& result) {
 	setSummary(result, prefix + (result.name.empty() ? result.action : result.name));
 }
 
-Result analyzeAdc(string_view raw) {
+Result analyzeAdc(string_view raw, bool redactionEnabled) {
 	Result result;
 	result.family = "ADC";
+	result.redactionEnabled = redactionEnabled;
 
 	if(raw.empty() || raw == "\n") {
 		result.command = "KEEPALIVE";
@@ -1420,7 +1427,7 @@ Result analyzeAdc(string_view raw) {
 		addWarning(result, "ADC messages require a routing type and three-character action.",
 			true);
 		setSummary(result, "Malformed ADC message");
-		result.safeMessage = applyMasks(raw, std::move(masks));
+		result.safeMessage = applyMasks(raw, std::move(masks), redactionEnabled);
 		return result;
 	}
 
@@ -1647,7 +1654,7 @@ Result analyzeAdc(string_view raw) {
 	}
 
 	buildAdcSummary(result);
-	result.safeMessage = applyMasks(raw, std::move(masks));
+	result.safeMessage = applyMasks(raw, std::move(masks), redactionEnabled);
 	return result;
 }
 
@@ -2619,10 +2626,11 @@ void parseNmdcSupports(Result& result, string_view parameters) {
 		" (" + std::to_string(recognized) + " recognized)");
 }
 
-Result analyzeNmdc(string_view raw) {
+Result analyzeNmdc(string_view raw, bool redactionEnabled) {
 	Result result;
 	result.family = "NMDC";
 	result.routing = "NMDC";
+	result.redactionEnabled = redactionEnabled;
 
 	if(raw == "|") {
 		result.command = "KEEPALIVE";
@@ -2656,7 +2664,7 @@ Result analyzeNmdc(string_view raw) {
 		result.known = false;
 		addWarning(result, "NMDC message is empty.", true);
 		setSummary(result, "Empty NMDC message");
-		result.safeMessage = applyMasks(raw, std::move(masks));
+		result.safeMessage = applyMasks(raw, std::move(masks), redactionEnabled);
 		return result;
 	}
 
@@ -2680,7 +2688,7 @@ Result analyzeNmdc(string_view raw) {
 		}
 		setSummary(result, "Public chat from " + firstFieldValue(result, "nick") +
 			": " + firstFieldValue(result, "text"));
-		result.safeMessage = applyMasks(raw, std::move(masks));
+		result.safeMessage = applyMasks(raw, std::move(masks), redactionEnabled);
 		return result;
 	}
 
@@ -2693,7 +2701,7 @@ Result analyzeNmdc(string_view raw) {
 		addWarning(result, "NMDC command does not begin with '$' or a chat nickname.");
 		genericNmdcParameters(result, body);
 		setSummary(result, "Unframed NMDC data");
-		result.safeMessage = applyMasks(raw, std::move(masks));
+		result.safeMessage = applyMasks(raw, std::move(masks), redactionEnabled);
 		return result;
 	}
 
@@ -2725,16 +2733,20 @@ Result analyzeNmdc(string_view raw) {
 	const bool credentialLike = isCredentialLikeNmdcCommand(command);
 	if(credentialLike && !parameters.empty()) {
 		addMask(masks, raw, trimAscii(parameters));
-		addField(result, "secret", "Authentication material", "<redacted>", true);
-		setSummary(result, result.name + " (authentication material redacted)");
+		addField(result, "secret", "Authentication material",
+			decodeNmdcText(trimAscii(parameters)), true);
+		setSummary(result, result.name + (redactionEnabled ?
+			" (authentication material redacted)" :
+			" (authentication material visible)"));
 	} else if(command == "$Z" || command == "$ZOn") {
 		if(!parameters.empty()) {
 			addMask(masks, raw, parameters);
 		}
-		addField(result, "blob", "Compressed payload", "<redacted>", true);
+		addField(result, "blob", "Compressed payload", bounded(parameters), true);
 		addWarning(result,
 			"Compressed NMDC content is intentionally not decompressed on the UI thread.");
-		setSummary(result, result.name + " (opaque payload redacted)");
+		setSummary(result, result.name + (redactionEnabled ?
+			" (opaque payload redacted)" : " (opaque payload visible)"));
 	} else if(command == "$MyINFO") {
 		parseNmdcMyInfo(result, parameters);
 	} else if(command == "$Search" || command == "$MultiSearch") {
@@ -2795,12 +2807,13 @@ Result analyzeNmdc(string_view raw) {
 		setSummary(result, result.name.empty() ? result.command : result.name);
 	}
 
-	result.safeMessage = applyMasks(raw, std::move(masks));
+	result.safeMessage = applyMasks(raw, std::move(masks), redactionEnabled);
 	return result;
 }
 
-Result analyzeOpaque(string_view family, string_view raw) {
+Result analyzeOpaque(string_view family, string_view raw, bool redactionEnabled) {
 	Result result;
+	result.redactionEnabled = redactionEnabled;
 	result.family = sanitize(family, 32);
 	result.command = result.family;
 	result.action = result.command;
@@ -2843,20 +2856,27 @@ void appendBounded(string& target, string_view value) {
 } // unnamed namespace
 
 Result analyze(const std::string& displayedProtocol, const std::string& raw) {
+	return analyze(displayedProtocol, raw, AnalysisOptions {});
+}
+
+Result analyze(const std::string& displayedProtocol, const std::string& raw,
+	const AnalysisOptions& options)
+{
 	const bool nmdc = asciiEqualNoCase(displayedProtocol, "NMDC") ||
 		(asciiEqualNoCase(displayedProtocol, "UDP") && !raw.empty() &&
 			(raw.front() == '$' || raw.front() == '<')) ||
 		(!raw.empty() && (raw.front() == '$' || raw.front() == '<') &&
 			!asciiEqualNoCase(displayedProtocol, "ADC"));
 	if(nmdc) {
-		return analyzeNmdc(raw);
+		return analyzeNmdc(raw, options.redactSensitiveValues);
 	}
 	if(asciiEqualNoCase(displayedProtocol, "ADC") ||
 		asciiEqualNoCase(displayedProtocol, "UDP"))
 	{
-		return analyzeAdc(raw);
+		return analyzeAdc(raw, options.redactSensitiveValues);
 	}
-	return analyzeOpaque(displayedProtocol.empty() ? "Unknown" : displayedProtocol, raw);
+	return analyzeOpaque(displayedProtocol.empty() ? "Unknown" : displayedProtocol,
+		raw, options.redactSensitiveValues);
 }
 
 namespace {
@@ -2980,7 +3000,9 @@ std::string formatDetails(const Result& result) {
 			appendBounded(details, sanitize(warning, 256));
 		}
 	}
-	appendBounded(details, "\r\n\r\nRaw (sensitive values redacted):\r\n");
+	appendBounded(details, result.redactionEnabled ?
+		"\r\n\r\nRaw (sensitive values redacted):\r\n" :
+		"\r\n\r\nRaw (redaction disabled):\r\n");
 	appendBounded(details, sanitize(result.safeMessage,
 		MAX_ANALYZER_INPUT_BYTES + 1024));
 	if(details.size() == MAX_DETAIL_BYTES) {

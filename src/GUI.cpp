@@ -101,7 +101,7 @@ static const ColumnInfo cols[] = {
 	{ "Port", 60, true },
 	{ "Peer", 150, false },
 	{ "Summary", 240, false },
-	{ "Raw (redacted)", 360, false }
+	{ "Raw", 360, false }
 };
 
 namespace {
@@ -836,7 +836,9 @@ void renderInspectorText(const tstring& text) {
 				formatInspectorRange(text, lineBegin, lineEnd,
 					table_colors::Role::InspectorWarning, true);
 				section = Section::Warnings;
-			} else if(line == _T("Raw (sensitive values redacted):")) {
+			} else if(line == _T("Raw (sensitive values redacted):") ||
+				line == _T("Raw (redaction disabled):"))
+			{
 				formatInspectorRange(text, lineBegin, lineEnd,
 					table_colors::Role::InspectorHeading, true);
 				section = Section::Raw;
@@ -1726,7 +1728,7 @@ void GUI::create() {
 		inspectorBox->setAccessibleName(_T("Decoded protocol message details"));
 		inspectorBox->setAccessibleHelpText(
 			_T("Read-only color-highlighted decoded fields, validation warnings, ")
-			_T("and redacted raw data."));
+			_T("and sanitized raw data. Sensitive values are redacted by default."));
 		addThemeUpdate([] {
 			if(inspectorBox) {
 				refreshInspectorPalette();
@@ -2070,6 +2072,9 @@ void GUI::timer() {
 	}
 
 	const auto timeFmt = normalizeTimestampFormat(Config::getConfig("TimeStampFormat"));
+	protocol_analyzer::AnalysisOptions analysisOptions;
+	analysisOptions.redactSensitiveValues =
+		!Config::getBoolConfig("DisableRedaction");
 	string logBatch;
 	bool logBatchTruncated = false;
 	bool matchingItemAdded = false;
@@ -2103,7 +2108,7 @@ void GUI::timer() {
 					protocol_analyzer::formatDetails(analysis);
 			} else {
 				analysis = protocol_analyzer::analyze(
-					message.protocol, message.message);
+					message.protocol, message.message, analysisOptions);
 				formattedAnalysis =
 					protocol_analyzer::formatDetails(analysis);
 			}
@@ -2151,8 +2156,8 @@ void GUI::timer() {
 		item->port = Util::toT(std::to_string(message.port));
 		item->peer = Util::toT(message.peer);
 		item->summary = Util::toT(analysis.summary);
-		// Retained history never keeps the unredacted payload. The bounded
-		// inspector text is computed once while the temporary capture is alive.
+		// Retained history keeps only the bounded, sanitized presentation selected
+		// by the current redaction setting. The inspector text is computed once.
 		item->message = Util::toT(analysis.safeMessage);
 		item->details = Util::toT(formattedAnalysis);
 		item->validation = Util::toT(protocol_analyzer::statusName(analysis.status));

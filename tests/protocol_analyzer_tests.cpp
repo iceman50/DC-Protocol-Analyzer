@@ -114,6 +114,7 @@ bool isValidUtf8(const std::string& value) {
 } // namespace
 
 int main() {
+	using protocol_analyzer::AnalysisOptions;
 	using protocol_analyzer::Status;
 	using protocol_analyzer::analyze;
 	using protocol_analyzer::analyzeBinaryPayload;
@@ -439,6 +440,16 @@ int main() {
 		"ADC private ID is redacted from every presentation surface");
 	expect(privateInf.safeMessage.find("PD<redacted>") != std::string::npos,
 		"ADC private-ID field structure remains visible after redaction");
+	AnalysisOptions diagnosticOptions;
+	diagnosticOptions.redactSensitiveValues = false;
+	const auto visiblePrivateInf = analyze("ADC",
+		"HINF IDPUBLIC PD" + privateId + " NIalice", diagnosticOptions);
+	expect(visiblePrivateInf.sensitive && !visiblePrivateInf.redactionEnabled &&
+		fieldValue(visiblePrivateInf, "PD") == privateId &&
+		visiblePrivateInf.safeMessage.find(privateId) != std::string::npos &&
+		protocol_analyzer::formatDetails(visiblePrivateInf).find(
+			"Raw (redaction disabled):") != std::string::npos,
+		"diagnostic analysis exposes ADC sensitive values when redaction is disabled");
 
 	const std::string pasSecret = "PASSWORDRESPONSEHASH";
 	const auto pas = analyze("ADC", "HPAS " + pasSecret);
@@ -487,6 +498,14 @@ int main() {
 		"NMDC password is redacted from table, details, and fields");
 	expect(myPass.safeMessage == "$MyPass <redacted>|",
 		"NMDC password redaction preserves command framing");
+	const auto visibleMyPass = analyze("NMDC", "$MyPass " + password + "|",
+		diagnosticOptions);
+	expect(visibleMyPass.sensitive && !visibleMyPass.redactionEnabled &&
+		fieldValue(visibleMyPass, "secret") == password &&
+		visibleMyPass.safeMessage == "$MyPass " + password + "|" &&
+		visibleMyPass.summary.find("visible") != std::string::npos &&
+		containsSecret(visibleMyPass, password),
+		"diagnostic analysis exposes NMDC authentication values when redaction is disabled");
 	const std::string batchedNmdcSecret = "BATCHED_NMDC_SECRET";
 	const auto batchedNmdc = analyze("NMDC",
 		"$Hello alice|$MyPass " + batchedNmdcSecret + "|");

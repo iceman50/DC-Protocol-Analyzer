@@ -26,6 +26,7 @@
 #include <pluginsdk/Util.h>
 
 #include <dwt/widgets/Button.h>
+#include <dwt/widgets/CheckBox.h>
 #include <dwt/widgets/ColorDialog.h>
 #include <dwt/widgets/ComboBox.h>
 #include <dwt/widgets/Grid.h>
@@ -64,7 +65,7 @@ SettingsDlg::~SettingsDlg() {
 }
 
 int SettingsDlg::run() {
-	create(Seed(dwt::Point(760, 660)));
+	create(Seed(dwt::Point(760, 700)));
 	return show();
 }
 
@@ -97,7 +98,8 @@ bool SettingsDlg::handleInitDialog() {
 		title->setFont(titleFont);
 		title->setColor(ui::palette().text, ui::palette().window);
 
-		Label::Seed subtitleSeed(_T("Tune capture capacity, appearance, timestamps, and optional file logging."));
+		Label::Seed subtitleSeed(
+			_T("Tune capture capacity, appearance, timestamps, redaction, and optional file logging."));
 		subtitleSeed.font = uiFont;
 		auto subtitle = header->addChild(subtitleSeed);
 		subtitle->setFont(uiFont);
@@ -209,7 +211,7 @@ bool SettingsDlg::handleInitDialog() {
 		formattingSeed.font = sectionFont;
 		auto formatting = grid->addChild(formattingSeed);
 		ui::styleGroupBox(formatting);
-		auto content = formatting->addChild(Grid::Seed(1, 2));
+		auto content = formatting->addChild(Grid::Seed(3, 2));
 		content->column(0).size = 112;
 		content->column(1).mode = GridInfo::FILL;
 		content->setSpacing(8);
@@ -234,6 +236,30 @@ bool SettingsDlg::handleInitDialog() {
 			timestamp = Util::fromT(timestampBox->getText().substr(0, 64));
 			Config::setConfig("TimeStampFormat", timestamp);
 		});
+
+		CheckBox::Seed redactionSeed(
+			_T("Show sensitive values (disable redaction)"));
+		redactionSeed.font = uiFont;
+		auto redaction = content->addChild(redactionSeed);
+		content->setWidget(redaction, 1, 0, 1, 2);
+		redaction->setChecked(Config::getBoolConfig("DisableRedaction"));
+		redaction->setAccessibleName(
+			_T("Show sensitive protocol values and disable redaction"));
+		redaction->setAccessibleHelpText(
+			_T("When enabled, newly captured credentials and private identifiers ")
+			_T("are shown and may be written to the protocol log."));
+		ui::styleCheckBox(redaction);
+		redaction->onClicked([redaction] {
+			Config::setConfig("DisableRedaction", redaction->getChecked());
+		});
+
+		Label::Seed redactionHintSeed(
+			_T("Applies to newly captured rows and file logs; existing history is unchanged."));
+		redactionHintSeed.font = uiFont;
+		auto redactionHint = content->addChild(redactionHintSeed);
+		content->setWidget(redactionHint, 2, 0, 1, 2);
+		redactionHint->setFont(uiFont);
+		redactionHint->setColor(ui::palette().danger, ui::palette().window);
 	}
 
 	{
@@ -329,8 +355,8 @@ bool SettingsDlg::handleInitDialog() {
 		ui::styleButton(browse);
 
 		Label::Seed hintSeed(
-			_T("UTF-8 logs rotate at 10 MiB (three backups). Credentials, ")
-			_T("private IDs, and compressed payloads are redacted."));
+			_T("UTF-8 logs rotate at 10 MiB (three backups) and follow the ")
+			_T("sensitive-value redaction setting above."));
 		hintSeed.font = uiFont;
 		auto hint = content->addChild(hintSeed);
 		content->setWidget(hint, 1, 1, 1, 2);
