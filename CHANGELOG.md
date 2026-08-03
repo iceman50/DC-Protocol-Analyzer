@@ -11,6 +11,8 @@ legacy history.
 
 ### Added
 
+- Added detection for uHub's ADC `RTF0` rich-text chat extension and the
+  `MSG` `RT1` formatting flag.
 - Added decoding for the additive ADC `INF` `CT` client-type flags, including
   bot, registered user, operator, super user, hub owner, hub, and hidden types.
 - Added detection for NMDC delimiter-only keep-alive messages and decoding for

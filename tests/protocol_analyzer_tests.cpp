@@ -167,6 +167,12 @@ int main() {
 		"CSUP feature negotiation is decoded");
 	expect(fieldName(csup, "AD").find("ADC base protocol") != std::string::npos,
 		"ADC SUP feature codes are identified by extension name");
+	const auto rtf0Support = analyze("ADC", "ISUP ADRTF0");
+	expect(rtf0Support.status == Status::Valid &&
+		fieldValue(rtf0Support, "AD") == "RTF0" &&
+		fieldName(rtf0Support, "AD").find("Rich-text chat messages") !=
+			std::string::npos,
+		"ADC SUP detects the RTF0 rich-text chat extension");
 	const auto hsup = analyze("ADC", "HSUP ADBASE RMZLIF");
 	expect(hsup.command == "HSUP" && hsup.routing == "To hub",
 		"HSUP routing is decoded");
@@ -198,14 +204,37 @@ int main() {
 		extendedRcm.status == Status::Valid,
 		"ADC RCM accepts and preserves trailing named extension fields");
 	const auto adcExtensions = analyze("ADC",
-		"BINF ABCD SUTCP4,NAT0,ASCH,SUD1,ADC0,ADCS");
+		"BINF ABCD SUTCP4,NAT0,ASCH,SUD1,ADC0,ADCS,RTF0");
 	expect(fieldValue(adcExtensions, "SU").find("NAT traversal revision 0") !=
 			std::string::npos &&
 		fieldValue(adcExtensions, "SU").find(
 			"Legacy ADC-over-TLS capability (ADCS/0.10)") != std::string::npos &&
 		fieldValue(adcExtensions, "SU").find("Advanced search") !=
+			std::string::npos &&
+		fieldValue(adcExtensions, "SU").find("Rich-text chat messages") !=
 			std::string::npos,
 		"ADC INF support lists use protocol meanings rather than vendor attribution");
+	const auto richTextMessage = analyze("ADC",
+		"BMSG ABCD ![a\\scat](https://example.org/cat.png) RT1");
+	expect(richTextMessage.status == Status::Valid &&
+		fieldValue(richTextMessage, "text") ==
+			"![a cat](https://example.org/cat.png)" &&
+		fieldValue(richTextMessage, "RT") == "1" &&
+		hasFieldName(richTextMessage, "RT", "Rich-text formatting (RTF0)") &&
+		richTextMessage.summary.find("rich-text chat") != std::string::npos,
+		"ADC RTF0 RT1 messages are identified as rich-text chat");
+	const auto rtf0FeatureCast = analyze("ADC",
+		"FMSG ABCD +RTF0 Hello RT1");
+	expect(rtf0FeatureCast.status == Status::Valid &&
+		rtf0FeatureCast.routing == "Feature broadcast" &&
+		fieldName(rtf0FeatureCast, "+").find("Rich-text chat messages") !=
+			std::string::npos &&
+		hasFieldName(rtf0FeatureCast, "RT", "Rich-text formatting (RTF0)"),
+		"ADC RTF0 feature-broadcast messages decode their route and RT flag");
+	const auto disabledRichTextFlag = analyze("ADC", "BMSG ABCD Plain RT0");
+	expect(disabledRichTextFlag.status == Status::Valid &&
+		disabledRichTextFlag.summary.find("rich-text") == std::string::npos,
+		"ADC RTF0 RT0 does not classify a message as rich text");
 	const auto hubInfFields = analyze("ADC",
 		"IINF MS1024 MR1 MO2 MU3 XU6 FOadc://backup.example UP3600");
 	expect(hasFieldName(hubInfFields, "MS", "Minimum share") &&

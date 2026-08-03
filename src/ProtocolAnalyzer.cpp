@@ -196,7 +196,7 @@ constexpr std::array<Definition, 90> NMDC_DEFINITIONS {{
 	{ "$SetHubURL", "Preferred hub URL", "Hub" }
 }};
 
-constexpr std::array<FeatureDefinition, 35> ADC_FEATURE_DEFINITIONS {{
+constexpr std::array<FeatureDefinition, 36> ADC_FEATURE_DEFINITIONS {{
 	{ "BASE", "ADC base protocol" },
 	{ "BAS0", "Legacy ADC/0.10 base protocol" },
 	{ "TIGR", "Tiger tree hashes" },
@@ -207,6 +207,7 @@ constexpr std::array<FeatureDefinition, 35> ADC_FEATURE_DEFINITIONS {{
 	{ "DFAV", "Distributed favorites" },
 	{ "UCMD", "User commands" },
 	{ "UCM0", "User commands revision 0" },
+	{ "RTF0", "Rich-text chat messages" },
 	{ "BLOM", "Bloom-filter sharing" },
 	{ "BLO0", "Bloom-filter sharing revision 0" },
 	{ "NATT", "NAT traversal" },
@@ -586,6 +587,9 @@ const char* adcFieldName(const Result& result, string_view code) {
 		if(code == "FM") return "Missing required INF field";
 		if(code == "FB") return "Invalid INF field";
 		if(code == "FC") return "Related command";
+	}
+	if(action == "MSG" && code == "RT") {
+		return "Rich-text formatting (RTF0)";
 	}
 	if(action == "QUI") {
 		if(code == "ID") return "Disconnect initiator SID";
@@ -1316,7 +1320,10 @@ void buildAdcSummary(Result& result) {
 	}
 	if(result.action == "MSG") {
 		const auto text = firstFieldValue(result, "text");
-		setSummary(result, prefix + (text.empty() ? "chat message" : "chat: " + text));
+		const bool richText = firstFieldValue(result, "RT") == "1";
+		setSummary(result, prefix +
+			(richText ? "rich-text chat" : "chat") +
+			(text.empty() ? " message" : ": " + text));
 		return;
 	}
 	if(result.action == "SCH") {

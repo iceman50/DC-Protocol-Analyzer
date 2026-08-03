@@ -193,16 +193,19 @@ Reference: [ADC BLOM extension](https://adc.sourceforge.io/ADC-EXT.html#_blom_bl
 
 ### Deployed ADC extension detection
 
-The official extension registry and locally verified DC++/AirDC++ implementations
-were reviewed for deployed extensions. Legacy protocol revisions are labeled by
-their wire meaning rather than attributed to a particular client. Detection
-includes:
+The official extension registry and locally verified DC++/AirDC++/uHub
+implementations were reviewed for deployed extensions. Legacy protocol
+revisions are labeled by their wire meaning rather than attributed to a
+particular client. Detection includes:
 
 - feature variants `BAS0`, `UCM0`, `BLO0`, `NAT0`, and `SUD1`, plus `ADC0`
   for legacy ADC-over-TLS (`ADCS/0.10`);
 - transport features `TCP4`, `TCP6`, `UDP4`, and `UDP6`;
-- `HBRI`, `MCN1`, `CPMI`, `CCPM`, and `UBN1`; and
+- `HBRI`, `MCN1`, `CPMI`, `CCPM`, and `UBN1`;
+- uHub's `RTF0` rich-text chat extension, including the `MSG` `RT1` flag; and
 - actions `TCP`, `PMI`, `PBD`, `UBD`, and `UBN`.
+
+Reference: [uHub RTF0 implementation](https://github.com/janvidar/uhub/commit/caae5934c49a42fbade244a39cd3dd6beda19822)
 
 ## NMDC analysis
 
