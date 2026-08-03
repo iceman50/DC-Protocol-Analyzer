@@ -157,9 +157,7 @@ inline COLORREF textOn(COLORREF background) {
 }
 
 template<typename WidgetPointer>
-inline void styleSurface(WidgetPointer widget, COLORREF background = palette().window,
-	COLORREF foreground = palette().text)
-{
+inline void styleSurface(WidgetPointer widget, COLORREF background = palette().window, COLORREF foreground = palette().text) {
 	if(!widget) {
 		return;
 	}
@@ -361,8 +359,7 @@ inline void drawComboBox(dwt::Canvas& canvas, dwt::ComboBoxPtr combo) {
 	dwt::Brush backgroundBrush(background);
 	canvas.fill(bounds, backgroundBrush);
 
-	dwt::Rectangle arrowRect(
-		arrowLeft, bounds.top(), arrowWidth, bounds.height());
+	dwt::Rectangle arrowRect(arrowLeft, bounds.top(), arrowWidth, bounds.height());
 	if(dropped) {
 		dwt::Brush arrowBackground(blend(background, colors.accent, 32));
 		canvas.fill(arrowRect, arrowBackground);
@@ -400,11 +397,7 @@ inline void drawComboBox(dwt::Canvas& canvas, dwt::ComboBoxPtr combo) {
 	} else {
 		text = combo->getText();
 	}
-	dwt::Rectangle textRect(
-		bounds.left() + combo->scale(8),
-		bounds.top(),
-		std::max(0L, arrowLeft - bounds.left() - combo->scale(12)),
-		bounds.height());
+	dwt::Rectangle textRect(bounds.left() + combo->scale(8), bounds.top(), std::max(0L, arrowLeft - bounds.left() - combo->scale(12)), bounds.height());
 	auto fontSelection = canvas.select(*combo->getFont());
 	auto backgroundMode = canvas.setBkMode(true);
 	canvas.setTextColor(foreground);
@@ -413,8 +406,7 @@ inline void drawComboBox(dwt::Canvas& canvas, dwt::ComboBoxPtr combo) {
 
 	{
 		dwt::Pen borderPen(border, dwt::Pen::Solid, 1);
-		dwt::Brush hollowBrush(
-			static_cast<HBRUSH>(::GetStockObject(HOLLOW_BRUSH)), false);
+		dwt::Brush hollowBrush(static_cast<HBRUSH>(::GetStockObject(HOLLOW_BRUSH)), false);
 		auto penSelection = canvas.select(borderPen);
 		auto brushSelection = canvas.select(hollowBrush);
 		dwt::Rectangle frame = bounds;
@@ -455,9 +447,7 @@ inline void styleComboBox(dwt::ComboBoxPtr combo) {
 	refreshComboBox(combo);
 }
 
-inline dwt::FontPtr makeFont(unsigned dpi, int points = 9, int weight = FW_NORMAL,
-	const TCHAR* face = _T("Segoe UI"))
-{
+inline dwt::FontPtr makeFont(unsigned dpi, int points = 9, int weight = FW_NORMAL, const TCHAR* face = _T("Segoe UI")) {
 	LOGFONT font {};
 	font.lfHeight = -::MulDiv(points, static_cast<int>(dpi), 72);
 	font.lfWeight = weight;
@@ -472,9 +462,7 @@ enum class ButtonTone {
 	Danger
 };
 
-inline LRESULT drawButton(NMCUSTOMDRAW& data, dwt::ButtonPtr button,
-	ButtonTone tone)
-{
+inline LRESULT drawButton(NMCUSTOMDRAW& data, dwt::ButtonPtr button, ButtonTone tone) {
 	if(data.dwDrawStage != CDDS_PREPAINT) {
 		return CDRF_DODEFAULT;
 	}
@@ -554,9 +542,7 @@ inline void styleButton(dwt::ButtonPtr button, ButtonTone tone = ButtonTone::Neu
 	}
 }
 
-inline LRESULT drawColorButton(NMCUSTOMDRAW& data, dwt::ButtonPtr button,
-	COLORREF color)
-{
+inline LRESULT drawColorButton(NMCUSTOMDRAW& data, dwt::ButtonPtr button, COLORREF color) {
 	if(data.dwDrawStage != CDDS_PREPAINT) {
 		return CDRF_DODEFAULT;
 	}
@@ -605,7 +591,7 @@ inline LRESULT drawColorButton(NMCUSTOMDRAW& data, dwt::ButtonPtr button,
 	if(focused && !disabled) {
 		dwt::Rectangle focusRect(data.rc);
 		focusRect.pos += dwt::Point(3, 3);
-		focusRect.size -= dwt::Point(6, 6);
+		focusRect.size -= dwt::Point(6, 6); 
 		dwt::Pen focusPen(foreground, dwt::Pen::Dot, 1);
 		auto focusPenSelection = canvas.select(focusPen);
 		canvas.line(focusRect);

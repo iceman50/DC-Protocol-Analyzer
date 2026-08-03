@@ -525,9 +525,7 @@ void addWarning(Result& result, string warning, bool invalid = false) {
 	}
 }
 
-void addField(Result& result, string code, string name, string value,
-	bool sensitive = false)
-{
+void addField(Result& result, string code, string name, string value, bool sensitive = false) {
 	if(result.fields.size() >= MAX_FIELDS) {
 		if(result.fields.size() == MAX_FIELDS) {
 			addWarning(result, "Additional fields were omitted by the analyzer safety limit.");
@@ -548,9 +546,7 @@ void addField(Result& result, string code, string name, string value,
 	result.sensitive = result.sensitive || sensitive;
 }
 
-const Definition* findDefinition(
-	const Definition* first, const Definition* last, string_view command)
-{
+const Definition* findDefinition( const Definition* first, const Definition* last, string_view command) {
 	const auto i = std::find_if(first, last, [command](const Definition& definition) {
 		return command == definition.command;
 	});
@@ -692,9 +688,7 @@ const char* adcFieldName(const Result& result, string_view code) {
 std::vector<string_view> split(string_view value, char delimiter, size_t maximum);
 
 template<size_t Size>
-const char* featureName(const std::array<FeatureDefinition, Size>& definitions,
-	string_view code, bool ignoreCase = false)
-{
+const char* featureName(const std::array<FeatureDefinition, Size>& definitions, string_view code, bool ignoreCase = false) {
 	const auto i = std::find_if(definitions.begin(), definitions.end(),
 		[code, ignoreCase](const FeatureDefinition& definition) {
 			return ignoreCase ? asciiEqualNoCase(code, definition.code) :
@@ -834,9 +828,7 @@ string formatBytes(uint64_t value) {
 	return out.str();
 }
 
-std::vector<string_view> split(
-	string_view value, char delimiter, size_t maximum = MAX_FIELDS + 16)
-{
+std::vector<string_view> split(string_view value, char delimiter, size_t maximum = MAX_FIELDS + 16) {
 	std::vector<string_view> result;
 	result.reserve(std::min(maximum, static_cast<size_t>(16)));
 	size_t start = 0;
@@ -987,9 +979,7 @@ void findNmdcSecurityMasks(string_view raw, std::vector<Span>& masks) {
 	}
 }
 
-string applyMasks(string_view raw, std::vector<Span> masks,
-	bool redactionEnabled)
-{
+string applyMasks(string_view raw, std::vector<Span> masks, bool redactionEnabled) {
 	if(!redactionEnabled) {
 		return sanitize(raw, MAX_ANALYZER_INPUT_BYTES + 1024);
 	}
@@ -1045,10 +1035,7 @@ void validateAdcSid(Result& result, string_view sid, const char* label) {
 	}
 }
 
-void parseAdcNamedFields(Result& result, string_view whole,
-	const std::vector<string_view>& tokens, size_t start, std::vector<Span>& masks,
-	bool forceSensitive = false)
-{
+void parseAdcNamedFields(Result& result, string_view whole, const std::vector<string_view>& tokens, size_t start, std::vector<Span>& masks, bool forceSensitive = false) {
 	for(size_t i = start; i < tokens.size(); ++i) {
 		const auto token = tokens[i];
 		if(token.size() < 2 || !isAdcAlpha(token[0]) || !isAdcAlphaNum(token[1])) {
@@ -1079,9 +1066,7 @@ void parseAdcNamedFields(Result& result, string_view whole,
 	}
 }
 
-void parseAdcGenericParameters(Result& result, string_view whole,
-	const std::vector<string_view>& tokens, size_t start, std::vector<Span>& masks)
-{
+void parseAdcGenericParameters(Result& result, string_view whole, const std::vector<string_view>& tokens, size_t start, std::vector<Span>& masks) {
 	size_t positionalIndex = 1;
 	for(size_t i = start; i < tokens.size(); ++i) {
 		const auto token = tokens[i];
@@ -1117,9 +1102,7 @@ string firstFieldValue(const Result& result, string_view code) {
 	return i == result.fields.end() ? string() : i->value;
 }
 
-void validateBloomTransferSemantics(Result& result, bool request,
-	string_view type, string_view identifier, string_view start, string_view bytes)
-{
+void validateBloomTransferSemantics(Result& result, bool request, string_view type, string_view identifier, string_view start, string_view bytes) {
 	result.binaryPayloadType = "blom";
 	result.name = request ? "Bloom filter request" : "Bloom filter response";
 
@@ -1755,9 +1738,7 @@ void parseNmdcRule(Result& result, string_view command, string_view parameters) 
 		" rule" + (result.fields.size() == 1 ? "" : "s"));
 }
 
-void parseNmdcShortTthSearch(Result& result, string_view command,
-	string_view parameters)
-{
+void parseNmdcShortTthSearch(Result& result, string_view command, string_view parameters) {
 	const auto values = split(trimAscii(parameters), ' ', 4);
 	if(values.size() < 2 || values[0].empty() || values[1].empty()) {
 		addWarning(result, "Short TTH search requires a hash and requester.", true);
@@ -1778,9 +1759,7 @@ void parseNmdcShortTthSearch(Result& result, string_view command,
 		" short TTH search for " + bounded(values[0], 64));
 }
 
-void parseNmdcUrlCommand(Result& result, string_view command,
-	string_view parameters)
-{
+void parseNmdcUrlCommand(Result& result, string_view command, string_view parameters) {
 	const auto value = trimAscii(parameters);
 	if(command == "$GetHubURL") {
 		if(!value.empty()) {
@@ -1950,9 +1929,7 @@ const char* nmdcTransferOptionName(string_view command, string_view code) {
 	return genericAdcFieldName(code);
 }
 
-std::vector<string> parseNmdcAdcParameters(Result& result,
-	string_view parameters)
-{
+std::vector<string> parseNmdcAdcParameters(Result& result, string_view parameters) {
 	std::vector<string> tokens;
 	tokens.reserve(8);
 	string current;
@@ -2020,9 +1997,7 @@ std::vector<string> parseNmdcAdcParameters(Result& result,
 	return tokens;
 }
 
-void parseNmdcTransfer(Result& result, string_view command,
-	string_view parameters)
-{
+void parseNmdcTransfer(Result& result, string_view command, string_view parameters) {
 	const auto tokens = parseNmdcAdcParameters(result, parameters);
 	static constexpr std::array<const char*, 4> names {{
 		"Transfer type", "Identifier", "Start position", "Byte count"
@@ -2319,9 +2294,7 @@ unsigned parseNmdcConnectionEndpoint(Result& result, string_view value) {
 	return parsedFlags;
 }
 
-void parseNmdcConnect(Result& result, string_view command,
-	string_view parameters)
-{
+void parseNmdcConnect(Result& result, string_view command, string_view parameters) {
 	const auto values = split(trimAscii(parameters), ' ', 8);
 	if(command == "$RevConnectToMe") {
 		if(values.size() < 2 || values[0].empty() || values[1].empty()) {
@@ -2395,9 +2368,7 @@ bool isFourDigitHex(string_view value) {
 		});
 }
 
-void parseNmdcAdvancedConnect(Result& result, string_view command,
-	string_view parameters)
-{
+void parseNmdcAdvancedConnect(Result& result, string_view command, string_view parameters) {
 	parameters = trimAscii(parameters);
 	if(command == "$RCTM") {
 		if(parameters.empty() || parameters.find('$') != string_view::npos) {
@@ -2448,9 +2419,7 @@ void parseNmdcAdvancedConnect(Result& result, string_view command,
 		firstFieldValue(result, "port"));
 }
 
-void parseNmdcPrivateMessage(Result& result, string_view command,
-	string_view parameters)
-{
+void parseNmdcPrivateMessage(Result& result, string_view command, string_view parameters) {
 	parameters = trimAscii(parameters);
 	if(command == "$MCTo:") {
 		const auto senderMarker = parameters.find(" $");
@@ -2554,8 +2523,7 @@ void parseNmdcIncrementalInfo(Result& result, string_view parameters) {
 		genericNmdcParameters(result, parameters);
 		return;
 	}
-	addField(result, "nick", "Nickname",
-		decodeNmdcText(parameters.substr(0, firstDelimiter)));
+	addField(result, "nick", "Nickname", decodeNmdcText(parameters.substr(0, firstDelimiter)));
 	const auto parts = split(parameters.substr(firstDelimiter + 1), '$');
 	for(const auto part : parts) {
 		if(part.empty()) {
@@ -2563,8 +2531,7 @@ void parseNmdcIncrementalInfo(Result& result, string_view parameters) {
 		}
 		const char code = part.front();
 		const auto data = part.substr(1);
-		addField(result, string(1, code), nmdcIncrementalFieldName(code),
-			decodeNmdcText(data));
+		addField(result, string(1, code), nmdcIncrementalFieldName(code), decodeNmdcText(data));
 		if(code == 'T') {
 			for(const auto component : split(data, ' ', 16)) {
 				if(!component.empty()) {
@@ -2859,9 +2826,7 @@ Result analyze(const std::string& displayedProtocol, const std::string& raw) {
 	return analyze(displayedProtocol, raw, AnalysisOptions {});
 }
 
-Result analyze(const std::string& displayedProtocol, const std::string& raw,
-	const AnalysisOptions& options)
-{
+Result analyze(const std::string& displayedProtocol, const std::string& raw, const AnalysisOptions& options) {
 	const bool nmdc = asciiEqualNoCase(displayedProtocol, "NMDC") ||
 		(asciiEqualNoCase(displayedProtocol, "UDP") && !raw.empty() &&
 			(raw.front() == '$' || raw.front() == '<')) ||

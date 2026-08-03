@@ -173,8 +173,12 @@ void CustomTitleBar::refresh() {
 	if(!bar || !::IsWindow(bar->handle())) {
 		return;
 	}
+	/*
 	::RedrawWindow(bar->handle(), nullptr, nullptr,
 		RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+	*/
+
+	bar->redrawWindow(RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
 }
 
 dwt::ButtonPtr CustomTitleBar::addButton(const dwt::tstring& caption,
