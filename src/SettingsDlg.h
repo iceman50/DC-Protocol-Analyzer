@@ -26,7 +26,7 @@
 #include "GUI.h"
 #include "TableColors.h"
 
-namespace ui {
+namespace protocol_analyzer::ui {
 class CustomTitleBar;
 }
 
@@ -52,7 +52,7 @@ private:
 	bool applyCaptureQueueCapacity();
 
 	GUI& owner;
-	std::unique_ptr<ui::CustomTitleBar> customTitleBar;
+	std::unique_ptr<protocol_analyzer::ui::CustomTitleBar> customTitleBar;
 	dwt::GridPtr grid;
 	dwt::ComboBoxPtr paletteTheme;
 	dwt::ComboBoxPtr paletteRole;

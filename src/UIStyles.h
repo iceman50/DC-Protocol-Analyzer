@@ -34,7 +34,7 @@
 #include <functional>
 #include <uxtheme.h>
 
-namespace ui {
+namespace protocol_analyzer::ui {
 
 struct Palette {
 	COLORREF window;
@@ -608,6 +608,6 @@ inline void styleColorButton(dwt::ButtonPtr button, std::function<COLORREF()> co
 	}
 }
 
-} // namespace ui
+} // namespace protocol_analyzer::ui
 
 #endif

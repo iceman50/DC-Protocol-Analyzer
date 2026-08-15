@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-namespace ui {
+namespace protocol_analyzer::ui {
 
 namespace {
 
@@ -468,4 +468,4 @@ HICON CustomTitleBar::getSmallIcon() const {
 	return icon;
 }
 
-} // namespace ui
+} // namespace protocol_analyzer::ui

@@ -55,7 +55,7 @@ SettingsDlg::SettingsDlg(dwt::Widget* parent, GUI& owner_) :
 	paletteHint(nullptr),
 	captureQueueBox(nullptr),
 	captureQueueHint(nullptr),
-	editingDarkPalette(ui::isDarkMode()),
+	editingDarkPalette(protocol_analyzer::ui::isDarkMode()),
 	selectedColorRole(TableColors::Role::Background)
 {
 	onInitDialog([this] { return handleInitDialog(); });
@@ -70,19 +70,19 @@ int SettingsDlg::run() {
 }
 
 bool SettingsDlg::handleInitDialog() {
-	const auto uiFont = ui::makeFont(getDpi(), 9);
-	const auto titleFont = ui::makeFont(getDpi(), 18, FW_SEMIBOLD);
-	const auto sectionFont = ui::makeFont(getDpi(), 9, FW_SEMIBOLD);
+	const auto uiFont = protocol_analyzer::ui::makeFont(getDpi(), 9);
+	const auto titleFont = protocol_analyzer::ui::makeFont(getDpi(), 18, FW_SEMIBOLD);
+	const auto sectionFont = protocol_analyzer::ui::makeFont(getDpi(), 9, FW_SEMIBOLD);
 
 	setFont(uiFont);
-	ui::styleSurface(this);
-	customTitleBar.reset(new ui::CustomTitleBar(this, uiFont));
+	protocol_analyzer::ui::styleSurface(this);
+	customTitleBar.reset(new protocol_analyzer::ui::CustomTitleBar(this, uiFont));
 
 	grid = addChild(Grid::Seed(6, 1));
 	grid->column(0).mode = GridInfo::FILL;
 	grid->setSpacing(12);
 	grid->setFont(uiFont);
-	ui::styleSurface(grid);
+	protocol_analyzer::ui::styleSurface(grid);
 
 	{
 		auto header = grid->addChild(Grid::Seed(2, 1));
@@ -90,40 +90,40 @@ bool SettingsDlg::handleInitDialog() {
 		header->row(0).mode = GridInfo::AUTO;
 		header->row(1).mode = GridInfo::AUTO;
 		header->setSpacing(4);
-		ui::styleSurface(header);
+		protocol_analyzer::ui::styleSurface(header);
 
 		Label::Seed titleSeed(_T("Preferences"));
 		titleSeed.font = titleFont;
 		auto title = header->addChild(titleSeed);
 		title->setFont(titleFont);
-		title->setColor(ui::palette().text, ui::palette().window);
+		title->setColor(protocol_analyzer::ui::palette().text, protocol_analyzer::ui::palette().window);
 
 		Label::Seed subtitleSeed(
 			_T("Tune capture capacity, appearance, timestamps, redaction, and optional file logging."));
 		subtitleSeed.font = uiFont;
 		auto subtitle = header->addChild(subtitleSeed);
 		subtitle->setFont(uiFont);
-		subtitle->setColor(ui::palette().muted, ui::palette().window);
+		subtitle->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 	}
 
 	{
 		GroupBox::Seed paletteSeed(_T("Display color palette"));
 		paletteSeed.font = sectionFont;
 		auto paletteGroup = grid->addChild(paletteSeed);
-		ui::styleGroupBox(paletteGroup);
+		protocol_analyzer::ui::styleGroupBox(paletteGroup);
 		auto content = paletteGroup->addChild(Grid::Seed(3, 4));
 		content->column(0).size = 112;
 		content->column(1).mode = GridInfo::FILL;
 		content->column(2).size = 112;
 		content->column(3).mode = GridInfo::FILL;
 		content->setSpacing(8);
-		ui::styleSurface(content);
+		protocol_analyzer::ui::styleSurface(content);
 
 		Label::Seed themeLabelSeed(_T("Palette"));
 		themeLabelSeed.font = uiFont;
 		auto themeLabel = content->addChild(themeLabelSeed);
 		themeLabel->setFont(uiFont);
-		themeLabel->setColor(ui::palette().muted, ui::palette().window);
+		themeLabel->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 
 		ComboBox::Seed themeSeed;
 		themeSeed.style |= CBS_DROPDOWNLIST;
@@ -133,13 +133,13 @@ bool SettingsDlg::handleInitDialog() {
 		paletteTheme->addValue(_T("Light"));
 		paletteTheme->addValue(_T("Dark"));
 		paletteTheme->setSelected(editingDarkPalette ? 1 : 0);
-		ui::styleComboBox(paletteTheme);
+		protocol_analyzer::ui::styleComboBox(paletteTheme);
 
 		Label::Seed roleLabelSeed(_T("Display element"));
 		roleLabelSeed.font = uiFont;
 		auto roleLabel = content->addChild(roleLabelSeed);
 		roleLabel->setFont(uiFont);
-		roleLabel->setColor(ui::palette().muted, ui::palette().window);
+		roleLabel->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 
 		ComboBox::Seed roleSeed;
 		roleSeed.style |= CBS_DROPDOWNLIST;
@@ -150,14 +150,14 @@ bool SettingsDlg::handleInitDialog() {
 			paletteRole->addValue(role.label);
 		}
 		paletteRole->setSelected(static_cast<int>(selectedColorRole));
-		ui::styleComboBox(paletteRole);
+		protocol_analyzer::ui::styleComboBox(paletteRole);
 
 		Label::Seed colorLabelSeed(_T("Current color"));
 		colorLabelSeed.font = uiFont;
 		auto colorLabel = content->addChild(colorLabelSeed);
 		content->setWidget(colorLabel, 1, 0);
 		colorLabel->setFont(uiFont);
-		colorLabel->setColor(ui::palette().muted, ui::palette().window);
+		colorLabel->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 
 		Button::Seed colorSeed(_T("Change color\u2026"));
 		colorSeed.font = uiFont;
@@ -166,7 +166,7 @@ bool SettingsDlg::handleInitDialog() {
 		content->setWidget(paletteColor, 1, 1);
 		paletteColor->setAccessibleName(_T("Change selected display color"));
 		paletteColor->onClicked([this] { choosePaletteColor(); });
-		ui::styleColorButton(paletteColor, [this] {
+		protocol_analyzer::ui::styleColorButton(paletteColor, [this] {
 			return TableColors::get(selectedColorRole, editingDarkPalette);
 		});
 
@@ -176,7 +176,7 @@ bool SettingsDlg::handleInitDialog() {
 		auto resetColorButton = content->addChild(resetColorSeed);
 		content->setWidget(resetColorButton, 1, 2);
 		resetColorButton->onClicked([this] { resetPaletteColor(); });
-		ui::styleButton(resetColorButton);
+		protocol_analyzer::ui::styleButton(resetColorButton);
 
 		Button::Seed resetPaletteSeed(_T("Reset palette"));
 		resetPaletteSeed.font = uiFont;
@@ -184,14 +184,14 @@ bool SettingsDlg::handleInitDialog() {
 		auto resetPaletteButton = content->addChild(resetPaletteSeed);
 		content->setWidget(resetPaletteButton, 1, 3);
 		resetPaletteButton->onClicked([this] { resetPalette(); });
-		ui::styleButton(resetPaletteButton);
+		protocol_analyzer::ui::styleButton(resetPaletteButton);
 
 		Label::Seed hintSeed;
 		hintSeed.font = uiFont;
 		paletteHint = content->addChild(hintSeed);
 		content->setWidget(paletteHint, 2, 0, 1, 4);
 		paletteHint->setFont(uiFont);
-		paletteHint->setColor(ui::palette().muted, ui::palette().window);
+		paletteHint->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 
 		paletteTheme->onSelectionChanged([this] {
 			editingDarkPalette = paletteTheme->getSelected() == 1;
@@ -210,18 +210,18 @@ bool SettingsDlg::handleInitDialog() {
 		GroupBox::Seed formattingSeed(_T("Message formatting"));
 		formattingSeed.font = sectionFont;
 		auto formatting = grid->addChild(formattingSeed);
-		ui::styleGroupBox(formatting);
+		protocol_analyzer::ui::styleGroupBox(formatting);
 		auto content = formatting->addChild(Grid::Seed(3, 2));
 		content->column(0).size = 112;
 		content->column(1).mode = GridInfo::FILL;
 		content->setSpacing(8);
-		ui::styleSurface(content);
+		protocol_analyzer::ui::styleSurface(content);
 
 		Label::Seed timestampLabelSeed(_T("Timestamp"));
 		timestampLabelSeed.font = uiFont;
 		auto timestampLabel = content->addChild(timestampLabelSeed);
 		timestampLabel->setFont(uiFont);
-		timestampLabel->setColor(ui::palette().muted, ui::palette().window);
+		timestampLabel->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 
 		timestamp = Config::getConfig("TimeStampFormat");
 		TextBox::Seed timestampSeed(Util::toT(timestamp));
@@ -231,7 +231,7 @@ bool SettingsDlg::handleInitDialog() {
 		timestampBox->setTextLimit(64);
 		timestampBox->setCue(_T("strftime pattern, for example [%Y-%m-%d %H:%M:%S]"));
 		timestampBox->setAccessibleName(_T("Timestamp format"));
-		timestampBox->setColor(ui::palette().text, ui::palette().panel);
+		timestampBox->setColor(protocol_analyzer::ui::palette().text, protocol_analyzer::ui::palette().panel);
 		timestampBox->onUpdated([this, timestampBox] {
 			timestamp = Util::fromT(timestampBox->getText().substr(0, 64));
 			Config::setConfig("TimeStampFormat", timestamp);
@@ -248,7 +248,7 @@ bool SettingsDlg::handleInitDialog() {
 		redaction->setAccessibleHelpText(
 			_T("When enabled, newly captured credentials and private identifiers ")
 			_T("are shown and may be written to the protocol log."));
-		ui::styleCheckBox(redaction);
+		protocol_analyzer::ui::styleCheckBox(redaction);
 		redaction->onClicked([redaction] {
 			Config::setConfig("DisableRedaction", redaction->getChecked());
 		});
@@ -259,26 +259,26 @@ bool SettingsDlg::handleInitDialog() {
 		auto redactionHint = content->addChild(redactionHintSeed);
 		content->setWidget(redactionHint, 2, 0, 1, 2);
 		redactionHint->setFont(uiFont);
-		redactionHint->setColor(ui::palette().danger, ui::palette().window);
+		redactionHint->setColor(protocol_analyzer::ui::palette().danger, protocol_analyzer::ui::palette().window);
 	}
 
 	{
 		GroupBox::Seed queueSeed(_T("Capture queue"));
 		queueSeed.font = sectionFont;
 		auto queueGroup = grid->addChild(queueSeed);
-		ui::styleGroupBox(queueGroup);
+		protocol_analyzer::ui::styleGroupBox(queueGroup);
 		auto content = queueGroup->addChild(Grid::Seed(2, 3));
 		content->column(0).size = 112;
 		content->column(1).mode = GridInfo::FILL;
 		content->column(2).mode = GridInfo::AUTO;
 		content->setSpacing(8);
-		ui::styleSurface(content);
+		protocol_analyzer::ui::styleSurface(content);
 
 		Label::Seed capacityLabelSeed(_T("Pending messages"));
 		capacityLabelSeed.font = uiFont;
 		auto capacityLabel = content->addChild(capacityLabelSeed);
 		capacityLabel->setFont(uiFont);
-		capacityLabel->setColor(ui::palette().muted, ui::palette().window);
+		capacityLabel->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 
 		const auto capacity = GUI::normalizeCaptureQueueCapacity(
 			Config::getIntConfig("CaptureQueueCapacity"));
@@ -289,14 +289,14 @@ bool SettingsDlg::handleInitDialog() {
 		captureQueueBox->setTextLimit(10);
 		captureQueueBox->setCue(_T("64 to 65536"));
 		captureQueueBox->setAccessibleName(_T("Capture queue message capacity"));
-		captureQueueBox->setColor(ui::palette().text, ui::palette().panel);
+		captureQueueBox->setColor(protocol_analyzer::ui::palette().text, protocol_analyzer::ui::palette().panel);
 
 		Button::Seed applySeed(_T("Apply"));
 		applySeed.font = uiFont;
 		applySeed.padding = Point(14, 5);
 		auto applyButton = content->addChild(applySeed);
 		applyButton->onClicked([this] { applyCaptureQueueCapacity(); });
-		ui::styleButton(applyButton);
+		protocol_analyzer::ui::styleButton(applyButton);
 
 		Label::Seed hintSeed(
 			_T("Allowed range: 64\u201365,536 messages. The independent 4 MiB ")
@@ -305,26 +305,26 @@ bool SettingsDlg::handleInitDialog() {
 		captureQueueHint = content->addChild(hintSeed);
 		content->setWidget(captureQueueHint, 1, 1, 1, 2);
 		captureQueueHint->setFont(uiFont);
-		captureQueueHint->setColor(ui::palette().muted, ui::palette().window);
+		captureQueueHint->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 	}
 
 	{
 		GroupBox::Seed loggingSeed(_T("File logging"));
 		loggingSeed.font = sectionFont;
 		auto logging = grid->addChild(loggingSeed);
-		ui::styleGroupBox(logging);
+		protocol_analyzer::ui::styleGroupBox(logging);
 		auto content = logging->addChild(Grid::Seed(2, 3));
 		content->column(0).size = 112;
 		content->column(1).mode = GridInfo::FILL;
 		content->column(2).mode = GridInfo::AUTO;
 		content->setSpacing(8);
-		ui::styleSurface(content);
+		protocol_analyzer::ui::styleSurface(content);
 
 		Label::Seed pathLabelSeed(_T("Log file"));
 		pathLabelSeed.font = uiFont;
 		auto pathLabel = content->addChild(pathLabelSeed);
 		pathLabel->setFont(uiFont);
-		pathLabel->setColor(ui::palette().muted, ui::palette().window);
+		pathLabel->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 
 		log = Config::getConfig("Log");
 		TextBox::Seed pathSeed(Util::toT(log));
@@ -334,7 +334,7 @@ bool SettingsDlg::handleInitDialog() {
 		pathBox->setTextLimit(32767);
 		pathBox->setCue(_T("Leave empty to disable file logging"));
 		pathBox->setAccessibleName(_T("Protocol log file path"));
-		pathBox->setColor(ui::palette().text, ui::palette().panel);
+		pathBox->setColor(protocol_analyzer::ui::palette().text, protocol_analyzer::ui::palette().panel);
 		pathBox->onUpdated([this, pathBox] {
 			log = Util::fromT(pathBox->getText());
 			Config::setConfig("Log", log);
@@ -352,7 +352,7 @@ bool SettingsDlg::handleInitDialog() {
 				pathBox->setText(file);
 			}
 		});
-		ui::styleButton(browse);
+		protocol_analyzer::ui::styleButton(browse);
 
 		Label::Seed hintSeed(
 			_T("UTF-8 logs rotate at 10 MiB (three backups) and follow the ")
@@ -361,7 +361,7 @@ bool SettingsDlg::handleInitDialog() {
 		auto hint = content->addChild(hintSeed);
 		content->setWidget(hint, 1, 1, 1, 2);
 		hint->setFont(uiFont);
-		hint->setColor(ui::palette().muted, ui::palette().window);
+		hint->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 	}
 
 	{
@@ -369,13 +369,13 @@ bool SettingsDlg::handleInitDialog() {
 		footer->column(0).mode = GridInfo::FILL;
 		footer->column(1).mode = GridInfo::AUTO;
 		footer->setSpacing(8);
-		ui::styleSurface(footer);
+		protocol_analyzer::ui::styleSurface(footer);
 
 		Label::Seed noteSeed(_T("Changes are saved and applied immediately."));
 		noteSeed.font = uiFont;
 		auto note = footer->addChild(noteSeed);
 		note->setFont(uiFont);
-		note->setColor(ui::palette().muted, ui::palette().window);
+		note->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 
 		Button::Seed closeSeed(_T("Done"));
 		closeSeed.style |= BS_DEFPUSHBUTTON;
@@ -383,7 +383,7 @@ bool SettingsDlg::handleInitDialog() {
 		closeSeed.padding = Point(20, 6);
 		auto closeButton = footer->addChild(closeSeed);
 		closeButton->onClicked([this] { ok(); });
-		ui::styleButton(closeButton, ui::ButtonTone::Primary);
+		protocol_analyzer::ui::styleButton(closeButton, protocol_analyzer::ui::ButtonTone::Primary);
 	}
 
 	refreshPaletteEditor();
@@ -419,7 +419,7 @@ bool SettingsDlg::applyCaptureQueueCapacity() {
 	}
 	if(!valid) {
 		captureQueueHint->setText(_T("Enter a whole number from 64 to 65,536."));
-		captureQueueHint->setColor(ui::palette().danger, ui::palette().window);
+		captureQueueHint->setColor(protocol_analyzer::ui::palette().danger, protocol_analyzer::ui::palette().window);
 		captureQueueBox->setFocus();
 		return false;
 	}
@@ -435,7 +435,7 @@ bool SettingsDlg::applyCaptureQueueCapacity() {
 		captureQueueHint->setText(
 			_T("Applied immediately. The independent 4 MiB memory ceiling remains active."));
 	}
-	captureQueueHint->setColor(ui::palette().muted, ui::palette().window);
+	captureQueueHint->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 	return true;
 }
 
@@ -464,7 +464,7 @@ void SettingsDlg::refreshPaletteEditor() {
 
 	tstring hint = editingDarkPalette ? _T("Editing the Dark display palette.") :
 		_T("Editing the Light display palette.");
-	hint += editingDarkPalette == ui::isDarkMode() ?
+	hint += editingDarkPalette == protocol_analyzer::ui::isDarkMode() ?
 		_T(" Changes are visible immediately.") :
 		_T(" Changes appear when that mode is activated.");
 	paletteHint->setText(hint);
@@ -475,7 +475,7 @@ void SettingsDlg::choosePaletteColor() {
 		TableColors::get(selectedColorRole, editingDarkPalette));
 	if(ColorDialog(this).open(params)) {
 		TableColors::set(selectedColorRole, editingDarkPalette, params.getColor());
-		if(editingDarkPalette == ui::isDarkMode()) {
+		if(editingDarkPalette == protocol_analyzer::ui::isDarkMode()) {
 			GUI::refreshTableColors();
 		}
 		refreshPaletteEditor();
@@ -485,7 +485,7 @@ void SettingsDlg::choosePaletteColor() {
 void SettingsDlg::resetPaletteColor() {
 	TableColors::set(selectedColorRole, editingDarkPalette,
 		TableColors::defaultColor(selectedColorRole, editingDarkPalette));
-	if(editingDarkPalette == ui::isDarkMode()) {
+	if(editingDarkPalette == protocol_analyzer::ui::isDarkMode()) {
 		GUI::refreshTableColors();
 	}
 	refreshPaletteEditor();
@@ -493,7 +493,7 @@ void SettingsDlg::resetPaletteColor() {
 
 void SettingsDlg::resetPalette() {
 	TableColors::reset(editingDarkPalette);
-	if(editingDarkPalette == ui::isDarkMode()) {
+	if(editingDarkPalette == protocol_analyzer::ui::isDarkMode()) {
 		GUI::refreshTableColors();
 	}
 	refreshPaletteEditor();

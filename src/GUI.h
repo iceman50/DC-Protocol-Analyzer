@@ -42,7 +42,7 @@ using std::string;
 constexpr ProtocolType PROTOCOL_UDP = static_cast<ProtocolType>(3);
 
 class SettingsDlg;
-namespace ui {
+namespace protocol_analyzer::ui {
 class CustomTitleBar;
 }
 
@@ -241,7 +241,7 @@ private:
 	string log;
 	tstring logError;
 	dwt::ButtonPtr themeButton;
-	std::unique_ptr<ui::CustomTitleBar> customTitleBar;
+	std::unique_ptr<protocol_analyzer::ui::CustomTitleBar> customTitleBar;
 	dwt::GridPtr rootGrid;
 	dwt::GridPtr actionsGrid;
 	std::vector<std::function<void()>> themeUpdates;

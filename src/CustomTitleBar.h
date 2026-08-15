@@ -20,7 +20,7 @@ class Canvas;
 class Frame;
 }
 
-namespace ui {
+namespace protocol_analyzer::ui {
 
 /**
  * A small client-area replacement for the native caption.
@@ -71,6 +71,6 @@ private:
 	bool active;
 };
 
-} // namespace ui
+} // namespace protocol_analyzer::ui
 
 #endif

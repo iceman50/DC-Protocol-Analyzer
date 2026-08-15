@@ -563,7 +563,7 @@ bool appendUtf8Log(const string& configuredPath, const string& data, tstring& er
 }
 
 LRESULT drawTableHeader(NMCUSTOMDRAW& data) {
-	const auto& colors = ui::palette();
+	const auto& colors = protocol_analyzer::ui::palette();
 	const auto headerBackground = TableColors::get(TableColors::Role::HeaderBackground);
 	const auto headerText = TableColors::get(TableColors::Role::HeaderText);
 
@@ -602,9 +602,9 @@ LRESULT drawTableHeader(NMCUSTOMDRAW& data) {
 
 	auto background = headerBackground;
 	if((data.uItemState & CDIS_SELECTED) != 0) {
-		background = ui::blend(headerBackground, colors.accent, 45);
+		background = protocol_analyzer::ui::blend(headerBackground, colors.accent, 45);
 	} else if((data.uItemState & CDIS_HOT) != 0) {
-		background = ui::blend(headerBackground, colors.accent, 22);
+		background = protocol_analyzer::ui::blend(headerBackground, colors.accent, 22);
 	}
 	dwt::FreeCanvas canvas(data.hdc);
 	dwt::Rectangle bounds(data.rc);
@@ -1061,7 +1061,7 @@ void GUI::create() {
 	shuttingDown = false;
 
 	initSettings(); // load our state from settings
-	ui::setDarkMode(Config::getBoolConfig("DarkMode"));
+	protocol_analyzer::ui::setDarkMode(Config::getBoolConfig("DarkMode"));
 	themeUpdates.clear();
 
 	Application::init();
@@ -1079,11 +1079,11 @@ void GUI::create() {
 		window->resize(initialBounds);
 
 		const auto dpi = window->getDpi();
-		uiFont = ui::makeFont(dpi, 9);
-		titleFont = ui::makeFont(dpi, 20, FW_SEMIBOLD);
-		sectionFont = ui::makeFont(dpi, 9, FW_SEMIBOLD);
+		uiFont = protocol_analyzer::ui::makeFont(dpi, 9);
+		titleFont = protocol_analyzer::ui::makeFont(dpi, 20, FW_SEMIBOLD);
+		sectionFont = protocol_analyzer::ui::makeFont(dpi, 9, FW_SEMIBOLD);
 		window->setFont(uiFont);
-		addThemeUpdate([] { ui::styleSurface(window); });
+		addThemeUpdate([] { protocol_analyzer::ui::styleSurface(window); });
 
 		auto iconPath = Util::toT(Config::getInstallPath() + "ProtocolAnalyzer.ico");
 		try {
@@ -1091,7 +1091,7 @@ void GUI::create() {
 			window->setLargeIcon(new dwt::Icon(iconPath, dwt::Point(32, 32)));
 		} catch(const dwt::DWTException&) { }
 
-		customTitleBar.reset(new ui::CustomTitleBar(window, uiFont, [this] { close(); }));
+		customTitleBar.reset(new protocol_analyzer::ui::CustomTitleBar(window, uiFont, [this] { close(); }));
 
 		window->onClosing([this]() -> bool {
 			saveState();
@@ -1147,7 +1147,7 @@ void GUI::create() {
 	grid->row(3).align = GridInfo::STRETCH;
 	grid->setSpacing(12);
 	grid->setFont(uiFont);
-	addThemeUpdate([grid] { ui::styleSurface(grid); });
+	addThemeUpdate([grid] { protocol_analyzer::ui::styleSurface(grid); });
 
 	{
 		auto header = grid->addChild(Grid::Seed(2, 5));
@@ -1163,7 +1163,7 @@ void GUI::create() {
 		header->row(0).mode = GridInfo::AUTO;
 		header->row(1).mode = GridInfo::AUTO;
 		header->setSpacing(8);
-		addThemeUpdate([header] { ui::styleSurface(header); });
+		addThemeUpdate([header] { protocol_analyzer::ui::styleSurface(header); });
 		grid->setWidget(header, 0, 0);
 
 		Label::Seed titleSeed(_T("Protocol Analyzer"));
@@ -1171,7 +1171,7 @@ void GUI::create() {
 		auto title = header->addChild(titleSeed);
 		header->setWidget(title, 0, 0);
 		addThemeUpdate([title] {
-			styleLabel(title, ui::palette().text, ui::palette().window, titleFont);
+			styleLabel(title, protocol_analyzer::ui::palette().text, protocol_analyzer::ui::palette().window, titleFont);
 		});
 		title->setAccessibleName(_T("Protocol Analyzer"));
 
@@ -1179,7 +1179,7 @@ void GUI::create() {
 		subtitleSeed.font = uiFont;
 		auto subtitle = header->addChild(subtitleSeed);
 		header->setWidget(subtitle, 1, 0);
-		addThemeUpdate([subtitle] {styleLabel(subtitle, ui::palette().muted, ui::palette().window, uiFont);
+		addThemeUpdate([subtitle] {styleLabel(subtitle, protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window, uiFont);
 		});
 
 		Label::Seed liveSeed(_T("\u25cf  LIVE CAPTURE"));
@@ -1188,18 +1188,18 @@ void GUI::create() {
 		captureStatusLabel = header->addChild(liveSeed);
 		header->setWidget(captureStatusLabel, 0, 1, 2, 1);
 		addThemeUpdate([] {
-			styleLabel(captureStatusLabel, ui::palette().success, ui::palette().window, sectionFont);
+			styleLabel(captureStatusLabel, protocol_analyzer::ui::palette().success, protocol_analyzer::ui::palette().window, sectionFont);
 		});
 		captureStatusLabel->setAccessibleName(_T("Live capture active"));
 
-		Button::Seed themeSeed(ui::isDarkMode() ? _T("Light mode") : _T("Dark mode"));
+		Button::Seed themeSeed(protocol_analyzer::ui::isDarkMode() ? _T("Light mode") : _T("Dark mode"));
 		themeSeed.font = uiFont;
 		themeSeed.padding = Point(16, 7);
 		themeButton = header->addChild(themeSeed);
 		header->setWidget(themeButton, 0, 2, 2, 1);
 		themeButton->onClicked([this] { toggleTheme(); });
-		themeButton->setAccessibleName(ui::isDarkMode() ? _T("Switch to light mode") : _T("Switch to dark mode"));
-		ui::styleButton(themeButton);
+		themeButton->setAccessibleName(protocol_analyzer::ui::isDarkMode() ? _T("Switch to light mode") : _T("Switch to dark mode"));
+		protocol_analyzer::ui::styleButton(themeButton);
 
 		Button::Seed settingsSeed(_T("Settings"));
 		settingsSeed.font = uiFont;
@@ -1208,7 +1208,7 @@ void GUI::create() {
 		header->setWidget(settingsButton, 0, 3, 2, 1);
 		settingsButton->onClicked([this] { openSettings(); });
 		settingsButton->setAccessibleName(_T("Open Protocol Analyzer settings"));
-		ui::styleButton(settingsButton);
+		protocol_analyzer::ui::styleButton(settingsButton);
 
 		Button::Seed closeSeed(_T("Close"));
 		closeSeed.font = uiFont;
@@ -1218,7 +1218,7 @@ void GUI::create() {
 		header->setWidget(closeButton, 0, 4, 2, 1);
 		closeButton->onClicked([this] { close(); });
 		closeButton->setAccessibleName(_T("Close Protocol Analyzer"));
-		ui::styleButton(closeButton, ui::ButtonTone::Primary);
+		protocol_analyzer::ui::styleButton(closeButton, protocol_analyzer::ui::ButtonTone::Primary);
 	}
 
 	{
@@ -1230,7 +1230,7 @@ void GUI::create() {
 		seed.font = uiFont;
 		table = grid->addChild(seed);
 		grid->setWidget(table, 2, 0);
-		addThemeUpdate([] { ui::ScrollBarStyle::apply(table); });
+		addThemeUpdate([] { protocol_analyzer::ui::ScrollBarStyle::apply(table); });
 		table->setAccessibleName(_T("Captured protocol messages"));
 		table->setAccessibleHelpText(_T("Virtual list of live protocol traffic. Use the filter workspace to narrow the view."));
 		table->onGetEmptyText([] { return _T("Waiting for matching protocol traffic\u2026"); });
@@ -1372,10 +1372,10 @@ void GUI::create() {
 		filterPanelSeed.font = sectionFont;
 		auto filterPanel = grid->addChild(filterPanelSeed);
 		grid->setWidget(filterPanel, 1, 0);
-		ui::styleGroupBox(filterPanel);
+		protocol_analyzer::ui::styleGroupBox(filterPanel);
 		addThemeUpdate([filterPanel] {
 			filterPanel->setFont(sectionFont);
-			ui::refreshGroupBox(filterPanel);
+			protocol_analyzer::ui::refreshGroupBox(filterPanel);
 		});
 
 		auto cur2 = filterPanel->addChild(Grid::Seed(3, 9));
@@ -1393,7 +1393,7 @@ void GUI::create() {
 		cur2->column(8).mode = GridInfo::AUTO;
 		cur2->setSpacing(8);
 		cur2->setFont(uiFont);
-		addThemeUpdate([cur2] { ui::styleSurface(cur2); });
+		addThemeUpdate([cur2] { protocol_analyzer::ui::styleSurface(cur2); });
 
 		Label::Seed pls;
 		pls.style |= SS_CENTER;
@@ -1401,7 +1401,7 @@ void GUI::create() {
 		pls.caption = _T("Protocol");
 		auto protocolLabel = cur2->addChild(pls);
 		addThemeUpdate([protocolLabel] {
-			styleLabel(protocolLabel, ui::palette().muted, ui::palette().window, uiFont);
+			styleLabel(protocolLabel, protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window, uiFont);
 		});
 
 		ComboBox::Seed protocolSeed;
@@ -1409,8 +1409,8 @@ void GUI::create() {
 		protocolSeed.font = uiFont;
 		protocolFilterBox = cur2->addChild(protocolSeed);
 		protocolFilterBox->setAccessibleName(_T("Protocol filter"));
-		ui::styleComboBox(protocolFilterBox);
-		addThemeUpdate([] { ui::refreshComboBox(protocolFilterBox); });
+		protocol_analyzer::ui::styleComboBox(protocolFilterBox);
+		addThemeUpdate([] { protocol_analyzer::ui::refreshComboBox(protocolFilterBox); });
 		protocolFilterBox->addValue(FILTER_ALL_LABEL);
 		protocolFilterBox->addValue(_T("ADC"));
 		protocolFilterBox->addValue(_T("NMDC"));
@@ -1432,7 +1432,7 @@ void GUI::create() {
 		ils.caption = _T("Address");
 		auto ipLabel = cur2->addChild(ils);
 		addThemeUpdate([ipLabel] {
-			styleLabel(ipLabel, ui::palette().muted, ui::palette().window, uiFont);
+			styleLabel(ipLabel, protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window, uiFont);
 		});
 
 		ComboBox::Seed ipSeed;
@@ -1440,8 +1440,8 @@ void GUI::create() {
 		ipSeed.font = uiFont;
 		ipFilterBox = cur2->addChild(ipSeed);
 		ipFilterBox->setAccessibleName(_T("IP address filter"));
-		ui::styleComboBox(ipFilterBox);
-		addThemeUpdate([] { ui::refreshComboBox(ipFilterBox); });
+		protocol_analyzer::ui::styleComboBox(ipFilterBox);
+		addThemeUpdate([] { protocol_analyzer::ui::refreshComboBox(ipFilterBox); });
 		ipFilterBox->addValue(FILTER_ALL_LABEL);
 		ipFilterBox->setSelected(0);
 
@@ -1451,7 +1451,7 @@ void GUI::create() {
 		pols.caption = _T("Port");
 		auto portLabel = cur2->addChild(pols);
 		addThemeUpdate([portLabel] {
-			styleLabel(portLabel, ui::palette().muted, ui::palette().window, uiFont);
+			styleLabel(portLabel, protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window, uiFont);
 		});
 
 		ComboBox::Seed portSeed;
@@ -1459,8 +1459,8 @@ void GUI::create() {
 		portSeed.font = uiFont;
 		portFilterBox = cur2->addChild(portSeed);
 		portFilterBox->setAccessibleName(_T("Port filter"));
-		ui::styleComboBox(portFilterBox);
-		addThemeUpdate([] { ui::refreshComboBox(portFilterBox); });
+		protocol_analyzer::ui::styleComboBox(portFilterBox);
+		addThemeUpdate([] { protocol_analyzer::ui::refreshComboBox(portFilterBox); });
 		portFilterBox->addValue(FILTER_ALL_LABEL);
 		portFilterBox->setSelected(0);
 
@@ -1470,7 +1470,7 @@ void GUI::create() {
 		pels.caption = _T("Peer");
 		auto peerLabel = cur2->addChild(pels);
 		addThemeUpdate([peerLabel] {
-			styleLabel(peerLabel, ui::palette().muted, ui::palette().window, uiFont);
+			styleLabel(peerLabel, protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window, uiFont);
 		});
 
 		ComboBox::Seed peerSeed;
@@ -1478,8 +1478,8 @@ void GUI::create() {
 		peerSeed.font = uiFont;
 		peerFilterBox = cur2->addChild(peerSeed);
 		peerFilterBox->setAccessibleName(_T("Peer filter"));
-		ui::styleComboBox(peerFilterBox);
-		addThemeUpdate([] { ui::refreshComboBox(peerFilterBox); });
+		protocol_analyzer::ui::styleComboBox(peerFilterBox);
+		addThemeUpdate([] { protocol_analyzer::ui::refreshComboBox(peerFilterBox); });
 		peerFilterBox->addValue(FILTER_ALL_LABEL);
 		peerFilterBox->setSelected(0);
 
@@ -1490,7 +1490,7 @@ void GUI::create() {
 		auto commandLabel = cur2->addChild(commandLabelSeed);
 		cur2->setWidget(commandLabel, 1, 0);
 		addThemeUpdate([commandLabel] {
-			styleLabel(commandLabel, ui::palette().muted, ui::palette().window, uiFont);
+			styleLabel(commandLabel, protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window, uiFont);
 		});
 
 		ComboBox::Seed commandSeed;
@@ -1499,8 +1499,8 @@ void GUI::create() {
 		commandFilterBox = cur2->addChild(commandSeed);
 		cur2->setWidget(commandFilterBox, 1, 1);
 		commandFilterBox->setAccessibleName(_T("Decoded command filter"));
-		ui::styleComboBox(commandFilterBox);
-		addThemeUpdate([] { ui::refreshComboBox(commandFilterBox); });
+		protocol_analyzer::ui::styleComboBox(commandFilterBox);
+		addThemeUpdate([] { protocol_analyzer::ui::refreshComboBox(commandFilterBox); });
 		commandFilterBox->addValue(FILTER_ALL_LABEL);
 		commandFilterBox->setSelected(0);
 
@@ -1511,7 +1511,7 @@ void GUI::create() {
 		auto categoryLabel = cur2->addChild(categoryLabelSeed);
 		cur2->setWidget(categoryLabel, 1, 2);
 		addThemeUpdate([categoryLabel] {
-			styleLabel(categoryLabel, ui::palette().muted, ui::palette().window, uiFont);
+			styleLabel(categoryLabel, protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window, uiFont);
 		});
 
 		ComboBox::Seed categorySeed;
@@ -1520,8 +1520,8 @@ void GUI::create() {
 		categoryFilterBox = cur2->addChild(categorySeed);
 		cur2->setWidget(categoryFilterBox, 1, 3);
 		categoryFilterBox->setAccessibleName(_T("Decoded category filter"));
-		ui::styleComboBox(categoryFilterBox);
-		addThemeUpdate([] { ui::refreshComboBox(categoryFilterBox); });
+		protocol_analyzer::ui::styleComboBox(categoryFilterBox);
+		addThemeUpdate([] { protocol_analyzer::ui::refreshComboBox(categoryFilterBox); });
 		categoryFilterBox->addValue(FILTER_ALL_LABEL);
 		categoryFilterBox->setSelected(0);
 
@@ -1532,7 +1532,7 @@ void GUI::create() {
 		auto searchLabel = cur2->addChild(fls);
 		cur2->setWidget(searchLabel, 2, 0);
 		addThemeUpdate([searchLabel] {
-			styleLabel(searchLabel, ui::palette().muted, ui::palette().window, uiFont);
+			styleLabel(searchLabel, protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window, uiFont);
 		});
 
 		TextBox::Seed tbs;
@@ -1544,7 +1544,7 @@ void GUI::create() {
 		findBox->setCue(_T("Search command, category, summary, peer, or message"));
 		findBox->setAccessibleName(_T("Search captured traffic"));
 		addThemeUpdate([findBox] {
-			findBox->setColor(ui::palette().text, ui::palette().panel);
+			findBox->setColor(protocol_analyzer::ui::palette().text, protocol_analyzer::ui::palette().panel);
 		});
 
 		Label::Seed rls;
@@ -1554,7 +1554,7 @@ void GUI::create() {
 		auto regexLabel = cur2->addChild(rls);
 		cur2->setWidget(regexLabel, 2, 6);
 		addThemeUpdate([regexLabel] {
-			styleLabel(regexLabel, ui::palette().muted, ui::palette().window, uiFont);
+			styleLabel(regexLabel, protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window, uiFont);
 		});
 
 		TextBox::Seed regexSeed;
@@ -1566,7 +1566,7 @@ void GUI::create() {
 		regexBox->setCue(_T("Safe regex: literals, ., [classes], ^ and $"));
 		regexBox->setAccessibleName(_T("Regular expression filter"));
 		addThemeUpdate([regexBox] {
-			regexBox->setColor(ui::palette().text, ui::palette().panel);
+			regexBox->setColor(protocol_analyzer::ui::palette().text, protocol_analyzer::ui::palette().panel);
 		});
 		if(!regexText.empty()) {
 			regexBox->setText(regexText);
@@ -1577,7 +1577,7 @@ void GUI::create() {
 		applyBtnSeed.padding = Point(16, 5);
 		auto applyBtn = cur2->addChild(applyBtnSeed);
 		cur2->setWidget(applyBtn, 2, 8);
-		ui::styleButton(applyBtn, ui::ButtonTone::Primary);
+		protocol_analyzer::ui::styleButton(applyBtn, protocol_analyzer::ui::ButtonTone::Primary);
 
 		Button::Seed resetBtnSeed(_T("Reset"));
 		resetBtnSeed.font = uiFont;
@@ -1585,7 +1585,7 @@ void GUI::create() {
 		auto resetBtn = cur2->addChild(resetBtnSeed);
 		cur2->setWidget(resetBtn, 0, 8);
 		resetBtn->setAccessibleName(_T("Reset all filters"));
-		ui::styleButton(resetBtn);
+		protocol_analyzer::ui::styleButton(resetBtn);
 
 		*applyFiltersRef = [this, findBox] {
 			findText = findBox->getText();
@@ -1716,18 +1716,18 @@ void GUI::create() {
 		inspectorPanelSeed.font = sectionFont;
 		auto inspectorPanel = grid->addChild(inspectorPanelSeed);
 		grid->setWidget(inspectorPanel, 3, 0);
-		ui::styleGroupBox(inspectorPanel);
+		protocol_analyzer::ui::styleGroupBox(inspectorPanel);
 		addThemeUpdate([inspectorPanel] {
 			inspectorPanel->setFont(sectionFont);
-			ui::refreshGroupBox(inspectorPanel);
+			protocol_analyzer::ui::refreshGroupBox(inspectorPanel);
 		});
 
 		auto inspectorContent = inspectorPanel->addChild(Grid::Seed(1, 1));
 		inspectorContent->row(0).mode = GridInfo::FILL;
 		inspectorContent->row(0).align = GridInfo::STRETCH;
 		inspectorContent->column(0).mode = GridInfo::FILL;
-		ui::styleSurface(inspectorContent);
-		addThemeUpdate([inspectorContent] { ui::styleSurface(inspectorContent); });
+		protocol_analyzer::ui::styleSurface(inspectorContent);
+		addThemeUpdate([inspectorContent] { protocol_analyzer::ui::styleSurface(inspectorContent); });
 
 		RichTextBox::Seed inspectorSeed;
 		inspectorSeed.style |= ES_READONLY | ES_WANTRETURN;
@@ -1735,7 +1735,7 @@ void GUI::create() {
 		inspectorSeed.scrollBarVerticallyFlag = true;
 		inspectorBox = inspectorContent->addChild(inspectorSeed);
 		inspectorContent->setWidget(inspectorBox, 0, 0);
-		addThemeUpdate([] { ui::ScrollBarStyle::apply(inspectorBox); });
+		addThemeUpdate([] { protocol_analyzer::ui::ScrollBarStyle::apply(inspectorBox); });
 		inspectorBox->setColor(
 			TableColors::get(TableColors::Role::InspectorText),
 			TableColors::get(TableColors::Role::InspectorBackground));
@@ -1757,10 +1757,10 @@ void GUI::create() {
 		actionPanelSeed.font = sectionFont;
 		auto actionPanel = grid->addChild(actionPanelSeed);
 		grid->setWidget(actionPanel, 4, 0);
-		ui::styleGroupBox(actionPanel);
+		protocol_analyzer::ui::styleGroupBox(actionPanel);
 		addThemeUpdate([actionPanel] {
 			actionPanel->setFont(sectionFont);
-			ui::refreshGroupBox(actionPanel);
+			protocol_analyzer::ui::refreshGroupBox(actionPanel);
 		});
 
 		auto actions = actionPanel->addChild(Grid::Seed(1, 5));
@@ -1769,15 +1769,15 @@ void GUI::create() {
 		actions->column(4).size = 270;
 		actions->column(4).mode = GridInfo::STATIC;
 		actions->setSpacing(18);
-		addThemeUpdate([actions] { ui::styleSurface(actions); });
+		addThemeUpdate([actions] { protocol_analyzer::ui::styleSurface(actions); });
 
 		CheckBox::Seed scrollSeed(_T("Follow newest traffic"));
 		scrollSeed.font = uiFont;
 		auto scrollW = actions->addChild(scrollSeed);
 		scrollW->setChecked(scroll);
-		ui::styleCheckBox(scrollW);
+		protocol_analyzer::ui::styleCheckBox(scrollW);
 		addThemeUpdate([scrollW] {
-			ui::refreshCheckBox(scrollW);
+			protocol_analyzer::ui::refreshCheckBox(scrollW);
 		});
 		scrollW->setAccessibleHelpText(_T("Automatically reveal the newest matching message."));
 		scrollW->onClicked([this, scrollW] {
@@ -1788,9 +1788,9 @@ void GUI::create() {
 		onTopSeed.font = uiFont;
 		auto onTop = actions->addChild(onTopSeed);
 		onTop->setChecked(keepOnTop);
-		ui::styleCheckBox(onTop);
+		protocol_analyzer::ui::styleCheckBox(onTop);
 		addThemeUpdate([onTop] {
-			ui::refreshCheckBox(onTop);
+			protocol_analyzer::ui::refreshCheckBox(onTop);
 		});
 		onTop->onClicked([this, onTop] {
 			window->setZOrder(onTop->getChecked() ? HWND_TOPMOST : HWND_NOTOPMOST);
@@ -1804,14 +1804,14 @@ void GUI::create() {
 		auto clearButton = actions->addChild(clearSeed);
 		clearButton->onClicked([this] { clear(); });
 		clearButton->setAccessibleName(_T("Clear captured message history"));
-		ui::styleButton(clearButton, ui::ButtonTone::Danger);
+		protocol_analyzer::ui::styleButton(clearButton, protocol_analyzer::ui::ButtonTone::Danger);
 
 		Label::Seed filterStatusSeed(_T("All traffic"));
 		filterStatusSeed.style |= SS_RIGHT;
 		filterStatusSeed.font = sectionFont;
 		filterStatusLabel = actions->addChild(filterStatusSeed);
 		addThemeUpdate([] {
-			styleLabel(filterStatusLabel, ui::palette().muted, ui::palette().window, sectionFont);
+			styleLabel(filterStatusLabel, protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window, sectionFont);
 		});
 
 		Label::Seed itemCountSeed(_T("0 shown  \u00b7  0 captured"));
@@ -1819,7 +1819,7 @@ void GUI::create() {
 		itemCountSeed.font = uiFont;
 		itemCountLabel = actions->addChild(itemCountSeed);
 		addThemeUpdate([] {
-			styleLabel(itemCountLabel, ui::palette().muted, ui::palette().window, uiFont);
+			styleLabel(itemCountLabel, protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window, uiFont);
 		});
 	}
 
@@ -2821,9 +2821,9 @@ void GUI::handleDpiChanged(unsigned oldDpi, unsigned newDpi) {
 		if(!life->load() || !window) {
 			return;
 		}
-		uiFont = ui::makeFont(newDpi, 9);
-		titleFont = ui::makeFont(newDpi, 20, FW_SEMIBOLD);
-		sectionFont = ui::makeFont(newDpi, 9, FW_SEMIBOLD);
+		uiFont = protocol_analyzer::ui::makeFont(newDpi, 9);
+		titleFont = protocol_analyzer::ui::makeFont(newDpi, 20, FW_SEMIBOLD);
+		sectionFont = protocol_analyzer::ui::makeFont(newDpi, 9, FW_SEMIBOLD);
 		window->setFont(uiFont);
 		setControlTreeFont(window, uiFont);
 		if(table) {
@@ -2859,9 +2859,9 @@ void GUI::applyTheme() {
 	}
 
 	if(themeButton) {
-		themeButton->setText(ui::isDarkMode() ? _T("Light mode") : _T("Dark mode"));
+		themeButton->setText(protocol_analyzer::ui::isDarkMode() ? _T("Light mode") : _T("Dark mode"));
 		themeButton->setAccessibleName(
-			ui::isDarkMode() ? _T("Switch to light mode") : _T("Switch to dark mode"));
+			protocol_analyzer::ui::isDarkMode() ? _T("Switch to light mode") : _T("Switch to dark mode"));
 	}
 
 	if(table) {
@@ -2877,8 +2877,8 @@ void GUI::applyTheme() {
 }
 
 void GUI::toggleTheme() {
-	const bool dark = !ui::isDarkMode();
-	ui::setDarkMode(dark);
+	const bool dark = !protocol_analyzer::ui::isDarkMode();
+	protocol_analyzer::ui::setDarkMode(dark);
 	Config::setConfig("DarkMode", dark);
 	applyTheme();
 }
@@ -2907,19 +2907,19 @@ void GUI::updateStatus() {
 			!regexText.empty();
 		if(!logError.empty()) {
 			filterStatusLabel->setText(logError);
-			filterStatusLabel->setColor(ui::palette().danger, ui::palette().window);
+			filterStatusLabel->setColor(protocol_analyzer::ui::palette().danger, protocol_analyzer::ui::palette().window);
 		} else if(!regexValid) {
 			filterStatusLabel->setText(
 				_T("Invalid or potentially expensive regular expression"));
-			filterStatusLabel->setColor(ui::palette().danger, ui::palette().window);
+			filterStatusLabel->setColor(protocol_analyzer::ui::palette().danger, protocol_analyzer::ui::palette().window);
 		} else if(droppedMessages) {
 			filterStatusLabel->setText(_T("Capture queue saturated"));
-			filterStatusLabel->setColor(ui::palette().danger, ui::palette().window);
+			filterStatusLabel->setColor(protocol_analyzer::ui::palette().danger, protocol_analyzer::ui::palette().window);
 		} else {
 			filterStatusLabel->setText(filtered ? _T("Filtered view") : _T("All traffic"));
 			filterStatusLabel->setColor(
-				filtered ? ui::palette().accent : ui::palette().muted,
-				ui::palette().window);
+				filtered ? protocol_analyzer::ui::palette().accent : protocol_analyzer::ui::palette().muted,
+				protocol_analyzer::ui::palette().window);
 		}
 	}
 }
@@ -3006,7 +3006,7 @@ void GUI::initSettings() {
 void GUI::saveState() {
 	Config::setConfig("AutoScroll", scroll);
 	Config::setConfig("KeepOnTop", keepOnTop);
-	Config::setConfig("DarkMode", ui::isDarkMode());
+	Config::setConfig("DarkMode", protocol_analyzer::ui::isDarkMode());
 	Config::setConfig("FilterProtocol", encodeFilterSetting(selectedProtocol));
 	Config::setConfig("FilterIp", encodeFilterSetting(selectedIp));
 	Config::setConfig("FilterPort", encodeFilterSetting(selectedPort));

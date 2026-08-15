@@ -238,7 +238,7 @@ inline void initialize();
 
 inline COLORREF get(Role role, bool dark) {
 	initialize();
-	if(ui::isHighContrast()) {
+	if(protocol_analyzer::ui::isHighContrast()) {
 		return highContrastColor(role);
 	}
 	const auto index = static_cast<size_t>(role);
@@ -246,7 +246,7 @@ inline COLORREF get(Role role, bool dark) {
 }
 
 inline COLORREF get(Role role) {
-	return get(role, ui::isDarkMode());
+	return get(role, protocol_analyzer::ui::isDarkMode());
 }
 
 inline void set(Role role, bool dark, COLORREF color) {
