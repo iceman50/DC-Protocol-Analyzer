@@ -2606,7 +2606,10 @@ Result analyzeNmdc(string_view raw, bool redactionEnabled) {
 	result.routing = "NMDC";
 	result.redactionEnabled = redactionEnabled;
 
-	if(raw == "|") {
+	// Incoming protocol hooks omit the NMDC frame delimiter. An empty host
+	// payload therefore represents the same delimiter-only keep-alive as the
+	// literal wire form observed by outgoing hooks.
+	if(raw.empty() || raw == "|") {
 		result.command = "KEEPALIVE";
 		result.action = result.command;
 		result.name = "Keep-alive";

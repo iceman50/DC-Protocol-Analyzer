@@ -61,7 +61,7 @@ private:
 	dwt::TextBoxPtr captureQueueBox;
 	dwt::LabelPtr captureQueueHint;
 	bool editingDarkPalette;
-	table_colors::Role selectedColorRole;
+	TableColors::Role selectedColorRole;
 
 	string log;
 	string timestamp;

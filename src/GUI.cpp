@@ -564,8 +564,8 @@ bool appendUtf8Log(const string& configuredPath, const string& data, tstring& er
 
 LRESULT drawTableHeader(NMCUSTOMDRAW& data) {
 	const auto& colors = ui::palette();
-	const auto headerBackground = table_colors::get(table_colors::Role::HeaderBackground);
-	const auto headerText = table_colors::get(table_colors::Role::HeaderText);
+	const auto headerBackground = TableColors::get(TableColors::Role::HeaderBackground);
+	const auto headerText = TableColors::get(TableColors::Role::HeaderText);
 
 	if(data.dwDrawStage == CDDS_PREPAINT) {
 		return CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT;
@@ -739,7 +739,7 @@ int inspectorOffset(const tstring& text, size_t offset) {
 }
 
 void formatInspectorRange(const tstring& text, size_t begin, size_t end,
-	table_colors::Role role, bool bold = false)
+	TableColors::Role role, bool bold = false)
 {
 	if(!inspectorBox || begin >= end || begin >= text.size()) {
 		return;
@@ -752,35 +752,47 @@ void formatInspectorRange(const tstring& text, size_t begin, size_t end,
 	format.cbSize = sizeof(format);
 	format.dwMask = CFM_COLOR | CFM_BOLD;
 	format.dwEffects = bold ? CFE_BOLD : 0;
-	format.crTextColor = table_colors::get(role);
+	format.crTextColor = TableColors::get(role);
 	inspectorBox->sendMessage(
 		EM_SETCHARFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&format));
 }
 
-table_colors::Role inspectorValidationRole(const tstring& value) {
+TableColors::Role inspectorValidationRole(const tstring& value) {
 	if(value == _T("Valid")) {
-		return table_colors::Role::InspectorValid;
+		return TableColors::Role::InspectorValid;
 	}
 	if(value == _T("Invalid")) {
-		return table_colors::Role::InspectorError;
+		return TableColors::Role::InspectorError;
 	}
-	return table_colors::Role::InspectorWarning;
+	return TableColors::Role::InspectorWarning;
 }
 
-table_colors::Role inspectorProtocolRole(const tstring& value) {
+TableColors::Role rawValidationRole(const tstring& validation,
+	TableColors::Role normalRole)
+{
+	if(validation == _T("Invalid")) {
+		return TableColors::Role::InspectorError;
+	}
+	if(validation == _T("Warning")) {
+		return TableColors::Role::InspectorWarning;
+	}
+	return normalRole;
+}
+
+TableColors::Role inspectorProtocolRole(const tstring& value) {
 	if(value == _T("ADC")) {
-		return table_colors::Role::Adc;
+		return TableColors::Role::Adc;
 	}
 	if(value == _T("NMDC")) {
-		return table_colors::Role::Nmdc;
+		return TableColors::Role::Nmdc;
 	}
 	if(value == _T("UDP")) {
-		return table_colors::Role::Udp;
+		return TableColors::Role::Udp;
 	}
 	if(value == _T("DHT")) {
-		return table_colors::Role::Dht;
+		return TableColors::Role::Dht;
 	}
-	return table_colors::Role::InspectorValue;
+	return TableColors::Role::InspectorValue;
 }
 
 void forceInspectorRedraw() {
@@ -811,7 +823,7 @@ void renderInspectorText(const tstring& text) {
 		dwt::util::HoldRedraw hold(inspectorBox);
 		setInspectorPlainText(text);
 		formatInspectorRange(text, 0, text.size(),
-			table_colors::Role::InspectorText);
+			TableColors::Role::InspectorText);
 
 		enum class Section {
 			Metadata,
@@ -820,6 +832,7 @@ void renderInspectorText(const tstring& text) {
 			Raw
 		};
 		Section section = Section::Metadata;
+		auto rawRole = TableColors::Role::InspectorRaw;
 		size_t lineBegin = 0;
 		while(lineBegin < text.size()) {
 			auto lineEnd = text.find_first_of(_T("\r\n"), lineBegin);
@@ -830,24 +843,24 @@ void renderInspectorText(const tstring& text) {
 
 			if(line == _T("Fields:")) {
 				formatInspectorRange(text, lineBegin, lineEnd,
-					table_colors::Role::InspectorHeading, true);
+					TableColors::Role::InspectorHeading, true);
 				section = Section::Fields;
 			} else if(line == _T("Warnings:")) {
 				formatInspectorRange(text, lineBegin, lineEnd,
-					table_colors::Role::InspectorWarning, true);
+					TableColors::Role::InspectorWarning, true);
 				section = Section::Warnings;
 			} else if(line == _T("Raw (sensitive values redacted):") ||
 				line == _T("Raw (redaction disabled):"))
 			{
 				formatInspectorRange(text, lineBegin, lineEnd,
-					table_colors::Role::InspectorHeading, true);
+					TableColors::Role::InspectorHeading, true);
 				section = Section::Raw;
 			} else if(!line.empty() && section == Section::Raw) {
 				formatInspectorRange(text, lineBegin, lineEnd,
-					table_colors::Role::InspectorRaw);
+					rawRole);
 			} else if(!line.empty() && section == Section::Warnings) {
 				formatInspectorRange(text, lineBegin, lineEnd,
-					table_colors::Role::InspectorWarning);
+					TableColors::Role::InspectorWarning);
 			} else if(!line.empty() && section == Section::Fields) {
 				const size_t contentBegin = line.find_first_not_of(_T(" \t"));
 				const size_t fieldBegin = contentBegin == tstring::npos ?
@@ -858,31 +871,34 @@ void renderInspectorText(const tstring& text) {
 				if(separator != tstring::npos) {
 					formatInspectorRange(text, lineBegin + fieldBegin,
 						lineBegin + separator,
-						table_colors::Role::InspectorFieldCode, true);
+						TableColors::Role::InspectorFieldCode, true);
 				}
 				const auto colon = line.find(_T(':'), nameBegin);
 				if(colon != tstring::npos) {
 					formatInspectorRange(text, lineBegin + nameBegin,
 						lineBegin + colon + 1,
-						table_colors::Role::InspectorLabel, true);
+						TableColors::Role::InspectorLabel, true);
 					const auto valueBegin = std::min(colon + 2, line.size());
 					formatInspectorRange(text, lineBegin + valueBegin, lineEnd,
-						table_colors::Role::InspectorValue);
+						TableColors::Role::InspectorValue);
 				}
 			} else if(!line.empty()) {
 				const auto colon = line.find(_T(':'));
 				if(colon != tstring::npos) {
 					formatInspectorRange(text, lineBegin, lineBegin + colon + 1,
-						table_colors::Role::InspectorLabel, true);
+						TableColors::Role::InspectorLabel, true);
 					const auto valueBegin = std::min(colon + 2, line.size());
-					auto valueRole = table_colors::Role::InspectorValue;
+					auto valueRole = TableColors::Role::InspectorValue;
 					if(line.compare(0, colon, _T("Validation")) == 0) {
-						valueRole = inspectorValidationRole(line.substr(valueBegin));
+						const auto validation = line.substr(valueBegin);
+						valueRole = inspectorValidationRole(validation);
+						rawRole = rawValidationRole(validation,
+							TableColors::Role::InspectorRaw);
 					} else if(line.compare(0, colon, _T("Protocol")) == 0) {
 						valueRole = inspectorProtocolRole(line.substr(valueBegin));
 					}
 					formatInspectorRange(text, lineBegin + valueBegin, lineEnd,
-						valueRole, valueRole != table_colors::Role::InspectorValue);
+						valueRole, valueRole != TableColors::Role::InspectorValue);
 				}
 			}
 
@@ -915,8 +931,8 @@ void refreshInspectorPalette() {
 		// reapplies every syntax span using the selected palette.
 		setInspectorPlainText(tstring());
 		inspectorBox->setColor(
-			table_colors::get(table_colors::Role::InspectorText),
-			table_colors::get(table_colors::Role::InspectorBackground));
+			TableColors::get(TableColors::Role::InspectorText),
+			TableColors::get(TableColors::Role::InspectorBackground));
 	}
 	renderInspectorText(text);
 }
@@ -1721,8 +1737,8 @@ void GUI::create() {
 		inspectorContent->setWidget(inspectorBox, 0, 0);
 		addThemeUpdate([] { ui::ScrollBarStyle::apply(inspectorBox); });
 		inspectorBox->setColor(
-			table_colors::get(table_colors::Role::InspectorText),
-			table_colors::get(table_colors::Role::InspectorBackground));
+			TableColors::get(TableColors::Role::InspectorText),
+			TableColors::get(TableColors::Role::InspectorBackground));
 		renderInspectorText(
 			_T("Select a captured message to decode its fields."));
 		inspectorBox->setAccessibleName(_T("Decoded protocol message details"));
@@ -1818,7 +1834,7 @@ void GUI::create() {
 
 	table->setFocus();
 	const auto tableBackground = getTableBackground();
-	table->setColor(table_colors::get(table_colors::Role::Text), tableBackground);
+	table->setColor(TableColors::get(TableColors::Role::Text), tableBackground);
 	updateStatus();
 
 	window->setTimer([this]() -> bool {
@@ -2042,7 +2058,7 @@ void GUI::openSettings() {
 		}
 		const auto tableBackground = getTableBackground();
 		table->setColor(
-			table_colors::get(table_colors::Role::Text), tableBackground);
+			TableColors::get(TableColors::Role::Text), tableBackground);
 		redrawTable();
 	}
 }
@@ -2355,58 +2371,61 @@ LRESULT GUI::handleCustomDraw(NMLVCUSTOMDRAW& data) {
 			data.nmcd.uItemState &= ~CDIS_SELECTED;
 		}
 		if(selected) {
-			data.clrText = table_colors::get(table_colors::Role::SelectionText);
-			data.clrTextBk = table_colors::get(table_colors::Role::SelectionBackground);
+			data.clrText = TableColors::get(TableColors::Role::SelectionText);
+			data.clrTextBk = TableColors::get(TableColors::Role::SelectionBackground);
 			return CDRF_NEWFONT;
 		}
 
-		data.clrTextBk = table_colors::get(
+		data.clrTextBk = TableColors::get(
 			itemIndex % 2 == 0 ?
-				table_colors::Role::Background :
-				table_colors::Role::AlternateBackground);
+				TableColors::Role::Background :
+				TableColors::Role::AlternateBackground);
 		const Item& item = *visibleItems[itemIndex];
-		auto role = table_colors::Role::Text;
+		auto role = TableColors::Role::Text;
 		switch(data.iSubItem) {
 			case COLUMN_TIMESTAMP:
-				role = table_colors::Role::Timestamp;
+				role = TableColors::Role::Timestamp;
 				break;
 			case COLUMN_COUNT:
-				role = table_colors::Role::Counter;
+				role = TableColors::Role::Counter;
 				break;
 			case COLUMN_DIRECTION:
 				role = item.dir == _T("Out") ?
-					table_colors::Role::Outgoing : table_colors::Role::Incoming;
+					TableColors::Role::Outgoing : TableColors::Role::Incoming;
 				break;
 			case COLUMN_PROTOCOL:
 				if(item.protocol == _T("ADC")) {
-					role = table_colors::Role::Adc;
+					role = TableColors::Role::Adc;
 				} else if(item.protocol == _T("NMDC")) {
-					role = table_colors::Role::Nmdc;
+					role = TableColors::Role::Nmdc;
 				} else if(item.protocol == _T("UDP")) {
-					role = table_colors::Role::Udp;
+					role = TableColors::Role::Udp;
 				} else if(item.protocol == _T("DHT")) {
-					role = table_colors::Role::Dht;
+					role = TableColors::Role::Dht;
 				} else {
-					role = table_colors::Role::Unknown;
+					role = TableColors::Role::Unknown;
 				}
 				break;
 			case COLUMN_IP:
-				role = table_colors::Role::Address;
+				role = TableColors::Role::Address;
 				break;
 			case COLUMN_PORT:
-				role = table_colors::Role::Port;
+				role = TableColors::Role::Port;
 				break;
 			case COLUMN_PEER:
-				role = table_colors::Role::Peer;
+				role = TableColors::Role::Peer;
 				break;
 			case COLUMN_SUMMARY:
+				role = TableColors::Role::Message;
+				break;
 			case COLUMN_MESSAGE:
-				role = table_colors::Role::Message;
+				role = rawValidationRole(
+					item.validation, TableColors::Role::Message);
 				break;
 			default:
 				break;
 		}
-		data.clrText = table_colors::get(role);
+		data.clrText = TableColors::get(role);
 		return CDRF_NEWFONT;
 	}
 
@@ -2828,7 +2847,7 @@ void GUI::handleDpiChanged(unsigned oldDpi, unsigned newDpi) {
 }
 
 COLORREF GUI::getTableBackground() const {
-	return table_colors::get(table_colors::Role::Background);
+	return TableColors::get(TableColors::Role::Background);
 }
 
 void GUI::applyTheme() {
@@ -2847,7 +2866,7 @@ void GUI::applyTheme() {
 
 	if(table) {
 		const auto background = getTableBackground();
-		table->setColor(table_colors::get(table_colors::Role::Text), background);
+		table->setColor(TableColors::get(TableColors::Role::Text), background);
 	}
 
 	updateStatus();
@@ -2913,8 +2932,8 @@ void GUI::redrawTable() {
 
 void GUI::refreshTableColors() {
 	if(table) {
-		const auto background = table_colors::get(table_colors::Role::Background);
-		table->setColor(table_colors::get(table_colors::Role::Text), background);
+		const auto background = TableColors::get(TableColors::Role::Background);
+		table->setColor(TableColors::get(TableColors::Role::Text), background);
 		if(auto header = getTableHeader(table)) {
 			header->redraw(true);
 		}
@@ -2934,7 +2953,7 @@ void GUI::initSettings() {
 		Config::setConfig("AutoScroll", scroll);
 		Config::setConfig("KeepOnTop", keepOnTop);
 	}
-	table_colors::initialize();
+	TableColors::initialize();
 	loadCaptureQueueCapacity();
 
 	Config::setConfig("Dialog", true);

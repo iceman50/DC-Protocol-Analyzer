@@ -56,7 +56,7 @@ SettingsDlg::SettingsDlg(dwt::Widget* parent, GUI& owner_) :
 	captureQueueBox(nullptr),
 	captureQueueHint(nullptr),
 	editingDarkPalette(ui::isDarkMode()),
-	selectedColorRole(table_colors::Role::Background)
+	selectedColorRole(TableColors::Role::Background)
 {
 	onInitDialog([this] { return handleInitDialog(); });
 }
@@ -146,7 +146,7 @@ bool SettingsDlg::handleInitDialog() {
 		roleSeed.font = uiFont;
 		paletteRole = content->addChild(roleSeed);
 		paletteRole->setAccessibleName(_T("Display element color"));
-		for(const auto& role : table_colors::roles()) {
+		for(const auto& role : TableColors::roles()) {
 			paletteRole->addValue(role.label);
 		}
 		paletteRole->setSelected(static_cast<int>(selectedColorRole));
@@ -167,7 +167,7 @@ bool SettingsDlg::handleInitDialog() {
 		paletteColor->setAccessibleName(_T("Change selected display color"));
 		paletteColor->onClicked([this] { choosePaletteColor(); });
 		ui::styleColorButton(paletteColor, [this] {
-			return table_colors::get(selectedColorRole, editingDarkPalette);
+			return TableColors::get(selectedColorRole, editingDarkPalette);
 		});
 
 		Button::Seed resetColorSeed(_T("Reset color"));
@@ -199,8 +199,8 @@ bool SettingsDlg::handleInitDialog() {
 		});
 		paletteRole->onSelectionChanged([this] {
 			const int selected = paletteRole->getSelected();
-			if(selected >= 0 && selected < static_cast<int>(table_colors::Role::Count)) {
-				selectedColorRole = static_cast<table_colors::Role>(selected);
+			if(selected >= 0 && selected < static_cast<int>(TableColors::Role::Count)) {
+				selectedColorRole = static_cast<TableColors::Role>(selected);
 				refreshPaletteEditor();
 			}
 		});
@@ -454,7 +454,7 @@ void SettingsDlg::refreshPaletteEditor() {
 		return;
 	}
 
-	const auto color = table_colors::get(selectedColorRole, editingDarkPalette);
+	const auto color = TableColors::get(selectedColorRole, editingDarkPalette);
 	TCHAR caption[64] {};
 	_stprintf_s(caption, sizeof(caption) / sizeof(caption[0]),
 		_T("#%02X%02X%02X  Change color\u2026"),
@@ -472,9 +472,9 @@ void SettingsDlg::refreshPaletteEditor() {
 
 void SettingsDlg::choosePaletteColor() {
 	ColorDialog::ColorParams params(
-		table_colors::get(selectedColorRole, editingDarkPalette));
+		TableColors::get(selectedColorRole, editingDarkPalette));
 	if(ColorDialog(this).open(params)) {
-		table_colors::set(selectedColorRole, editingDarkPalette, params.getColor());
+		TableColors::set(selectedColorRole, editingDarkPalette, params.getColor());
 		if(editingDarkPalette == ui::isDarkMode()) {
 			GUI::refreshTableColors();
 		}
@@ -483,8 +483,8 @@ void SettingsDlg::choosePaletteColor() {
 }
 
 void SettingsDlg::resetPaletteColor() {
-	table_colors::set(selectedColorRole, editingDarkPalette,
-		table_colors::defaultColor(selectedColorRole, editingDarkPalette));
+	TableColors::set(selectedColorRole, editingDarkPalette,
+		TableColors::defaultColor(selectedColorRole, editingDarkPalette));
 	if(editingDarkPalette == ui::isDarkMode()) {
 		GUI::refreshTableColors();
 	}
@@ -492,7 +492,7 @@ void SettingsDlg::resetPaletteColor() {
 }
 
 void SettingsDlg::resetPalette() {
-	table_colors::reset(editingDarkPalette);
+	TableColors::reset(editingDarkPalette);
 	if(editingDarkPalette == ui::isDarkMode()) {
 		GUI::refreshTableColors();
 	}

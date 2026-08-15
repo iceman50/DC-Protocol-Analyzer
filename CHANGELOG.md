@@ -15,8 +15,9 @@ legacy history.
   `MSG` `RT1` formatting flag.
 - Added decoding for the additive ADC `INF` `CT` client-type flags, including
   bot, registered user, operator, super user, hub owner, hub, and hidden types.
-- Added detection for NMDC delimiter-only keep-alive messages and decoding for
-  the status and capability flags in the `$MyINFO` connection-status byte.
+- Added detection for NMDC delimiter-only keep-alive messages, including the
+  delimiter-stripped incoming form supplied by the host, and decoding for the
+  status and capability flags in the `$MyINFO` connection-status byte.
 
 ## [1.00] - 2026-07-25
 

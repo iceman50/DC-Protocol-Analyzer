@@ -27,7 +27,7 @@
 #include <cstddef>
 #include <string>
 
-namespace table_colors {
+namespace TableColors {
 
 enum class Role {
 	Background,
@@ -335,6 +335,6 @@ inline void initialize() {
 	dcapi::Config::removeConfig("DarkThemeInitialized");
 }
 
-} // namespace table_colors
+} // namespace TableColors
 
 #endif

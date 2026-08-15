@@ -43,6 +43,8 @@ The virtual table displays:
 
 ADC line-feed keep-alives are identified as valid `KEEPALIVE` control traffic,
 including the delimiter-stripped form supplied by the host for incoming lines.
+NMDC delimiter-only keep-alives receive the same treatment: both the literal
+`|` wire form and the host's delimiter-stripped incoming form remain visible.
 
 The virtual list retains responsive scrolling with large histories. Columns
 may be resized or reordered, and rows use protocol-, direction-, category-,

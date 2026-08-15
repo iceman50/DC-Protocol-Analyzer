@@ -421,10 +421,17 @@ LRESULT CustomTitleBar::drawButton(NMCUSTOMDRAW& data,
 		break;
 
 	case ButtonRole::Close:
-		canvas.line(dwt::Point(centerX - half, centerY - half),
-			dwt::Point(centerX + half, centerY + half));
-		canvas.line(dwt::Point(centerX + half, centerY - half),
-			dwt::Point(centerX - half, centerY + half));
+		// GDI's LineTo omits the final pixel. Draw the four arms from the
+		// common center and extend each endpoint by one pixel so every arm
+		// has the same visible length and an exact 45-degree angle.
+		canvas.line(dwt::Point(centerX, centerY),
+			dwt::Point(centerX - half - 1, centerY - half - 1));
+		canvas.line(dwt::Point(centerX, centerY),
+			dwt::Point(centerX + half + 1, centerY - half - 1));
+		canvas.line(dwt::Point(centerX, centerY),
+			dwt::Point(centerX - half - 1, centerY + half + 1));
+		canvas.line(dwt::Point(centerX, centerY),
+			dwt::Point(centerX + half + 1, centerY + half + 1));
 		break;
 	}
 

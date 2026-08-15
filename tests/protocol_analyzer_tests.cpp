@@ -551,6 +551,16 @@ int main() {
 		nmdcKeepAlive.summary == "NMDC keep-alive" &&
 		nmdcKeepAlive.safeMessage == "|",
 		"NMDC delimiter-only keep-alive is valid and visibly classified");
+	const auto strippedNmdcKeepAlive = analyze("NMDC", "");
+	expect(strippedNmdcKeepAlive.command == "KEEPALIVE" &&
+		strippedNmdcKeepAlive.name == "Keep-alive" &&
+		strippedNmdcKeepAlive.category == "Control" &&
+		strippedNmdcKeepAlive.routing == "Connection" &&
+		strippedNmdcKeepAlive.status == Status::Valid &&
+		strippedNmdcKeepAlive.warnings.empty() &&
+		strippedNmdcKeepAlive.summary == "NMDC keep-alive" &&
+		strippedNmdcKeepAlive.safeMessage == "|",
+		"delimiter-stripped incoming NMDC keep-alive remains visible");
 
 	const auto myInfo = analyze("NMDC",
 		"$MyINFO $ALL alice <++ V:0.881,M:A,H:1/0/0,S:3>$ "

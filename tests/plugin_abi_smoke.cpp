@@ -1042,6 +1042,14 @@ int main(int argc, char** argv) {
 		passwordCommandText.begin(), passwordCommandText.end());
 	passwordCommand.push_back('\0');
 	fireHook(HOOK_NETWORK_HUB_OUT, &nmdcHub, passwordCommand.data());
+	char strippedNmdcKeepAlive[] = "";
+	char literalNmdcKeepAlive[] = "|";
+	expect(fireHook(HOOK_NETWORK_HUB_IN, &nmdcHub,
+		strippedNmdcKeepAlive) == False,
+		"delimiter-stripped NMDC keep-alive capture remains observational");
+	expect(fireHook(HOOK_NETWORK_HUB_OUT, &nmdcHub,
+		literalNmdcKeepAlive) == False,
+		"literal NMDC keep-alive capture remains observational");
 	char richEditLiteralMessage[] =
 		"IINF NIbrace{value} DEpath\\\\folder";
 	fireHook(HOOK_NETWORK_HUB_IN, &hub, richEditLiteralMessage);
@@ -1256,16 +1264,33 @@ int main(int argc, char** argv) {
 			const auto timestamp = listViewText(listView, 0, 0);
 			expect(!timestamp.empty() && timestamp.front() == L'[',
 				"visible messages include a timestamp");
-			int keepAliveRow = -1;
+			int adcKeepAliveRow = -1;
+			int incomingNmdcKeepAliveRow = -1;
+			int outgoingNmdcKeepAliveRow = -1;
 			for(int row = 0; row < initialItemCount; ++row) {
 				if(listViewText(listView, row, 4) == L"KEEPALIVE") {
-					keepAliveRow = row;
-					break;
+					const auto protocol = listViewText(listView, row, 3);
+					const auto direction = listViewText(listView, row, 2);
+					if(protocol == L"ADC") {
+						adcKeepAliveRow = row;
+					} else if(protocol == L"NMDC" && direction == L"In") {
+						incomingNmdcKeepAliveRow = row;
+					} else if(protocol == L"NMDC" && direction == L"Out") {
+						outgoingNmdcKeepAliveRow = row;
+					}
 				}
 			}
-			expect(keepAliveRow >= 0 &&
-				listViewText(listView, keepAliveRow, 5) == L"Control",
+			expect(adcKeepAliveRow >= 0 &&
+				listViewText(listView, adcKeepAliveRow, 5) == L"Control",
 				"ADC line-feed keep-alive is displayed as valid control traffic");
+			expect(incomingNmdcKeepAliveRow >= 0 &&
+				listViewText(listView, incomingNmdcKeepAliveRow, 5) == L"Control" &&
+				listViewText(listView, incomingNmdcKeepAliveRow, 10) == L"|",
+				"delimiter-stripped incoming NMDC keep-alive is retained and visible");
+			expect(outgoingNmdcKeepAliveRow >= 0 &&
+				listViewText(listView, outgoingNmdcKeepAliveRow, 5) == L"Control" &&
+				listViewText(listView, outgoingNmdcKeepAliveRow, 10) == L"|",
+				"literal outgoing NMDC keep-alive is retained and visible");
 
 			constexpr int summaryColumn = 9;
 			const auto summary = listViewText(listView, 0, summaryColumn);
@@ -1327,6 +1352,61 @@ int main(int argc, char** argv) {
 						"decoded inspector applies distinct syntax-highlight colors");
 				}
 			}
+
+			char warningRawMessage[] = "BXYZ ABCD AAvalue";
+			char invalidRawMessage[] = "BINF bad! NIalice";
+			fireHook(HOOK_NETWORK_HUB_IN, &hub, warningRawMessage);
+			fireHook(HOOK_NETWORK_HUB_IN, &hub, invalidRawMessage);
+			pumpMessages(std::chrono::milliseconds(400));
+			int warningRawRow = -1;
+			int invalidRawRow = -1;
+			const auto validationItemCount = static_cast<int>(
+				::SendMessageW(listView, LVM_GETITEMCOUNT, 0, 0));
+			for(int row = 0; row < validationItemCount; ++row) {
+				const auto raw = listViewText(listView, row, 10);
+				if(raw == L"BXYZ ABCD AAvalue") {
+					warningRawRow = row;
+				} else if(raw == L"BINF bad! NIalice") {
+					invalidRawRow = row;
+				}
+			}
+			expect(warningRawRow >= 0 && invalidRawRow >= 0,
+				"warning and invalid raw messages remain visible");
+
+			auto expectRawValidationColor = [listView, inspector](int row,
+				const wchar_t* validation, const wchar_t* raw, const char* label)
+			{
+				if(row < 0 || !inspector) {
+					return;
+				}
+				ListView_SetItemState(
+					listView, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+				ListView_SetItemState(listView, row,
+					LVIS_SELECTED | LVIS_FOCUSED,
+					LVIS_SELECTED | LVIS_FOCUSED);
+				pumpMessages(std::chrono::milliseconds(20));
+				const auto inspected = windowText(inspector);
+				const std::wstring validationText =
+					std::wstring(L"Validation: ") + validation;
+				const auto validationBegin = inspected.find(validationText);
+				const auto rawHeader = inspected.find(L"Raw (");
+				const auto rawBegin = rawHeader == std::wstring::npos ?
+					std::wstring::npos : inspected.find(raw, rawHeader);
+				const auto validationColor = validationBegin == std::wstring::npos ?
+					CLR_INVALID : characterColor(inspector,
+						static_cast<LONG>(validationBegin + 12));
+				const auto rawColor = rawBegin == std::wstring::npos ?
+					CLR_INVALID : characterColor(
+						inspector, static_cast<LONG>(rawBegin));
+				expect(validationColor != CLR_INVALID && rawColor != CLR_INVALID &&
+					rawColor == validationColor, label);
+			};
+			expectRawValidationColor(warningRawRow, L"Warning",
+				L"BXYZ ABCD AAvalue",
+				"warning raw output uses the configured warning color");
+			expectRawValidationColor(invalidRawRow, L"Invalid",
+				L"BINF bad! NIalice",
+				"invalid raw output uses the configured error color");
 
 			{
 				std::lock_guard<std::mutex> lock(stateMutex);
