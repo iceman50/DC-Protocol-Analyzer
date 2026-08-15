@@ -776,7 +776,7 @@
     <ClInclude Include="..\..\src\SettingsDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\TableColors.h">
+    <ClInclude Include="..\..\src\Palette.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\UIStyles.h">

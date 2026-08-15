@@ -854,6 +854,15 @@ COLORREF characterColor(HWND windowHandle, LONG offset) {
 		format.crTextColor : CLR_INVALID;
 }
 
+// GetWindowText preserves CRLF pairs, while RichEdit character positions count
+// each pair as a single newline. Convert a displayed-text index before asking
+// RichEdit for the formatting at that position.
+LONG richEditOffset(const std::wstring& text, size_t offset) {
+	offset = std::min(offset, text.size());
+	return static_cast<LONG>(offset - static_cast<size_t>(std::count(
+		text.begin(), text.begin() + static_cast<std::ptrdiff_t>(offset), L'\r')));
+}
+
 bool fillsParentClient(HWND child, LONG tolerance = 2) {
 	if(!child) {
 		return false;
@@ -985,6 +994,8 @@ int main(int argc, char** argv) {
 		// Exercise normalization of an unsafe persisted value while keeping the
 		// smoke test small enough to saturate the configured queue.
 		intConfig[configKey(metadata.guid, "CaptureQueueCapacity")] = 1;
+		intConfig[configKey(metadata.guid, "CaptureQueueMemoryLimitMiB")] = 1024;
+		intConfig[configKey(metadata.guid, "ClipboardLimitMiB")] = 1024;
 	}
 
 	expect(pluginMain(ON_LOAD_RUNTIME, nullptr, nullptr) == False,
@@ -997,6 +1008,15 @@ int main(int argc, char** argv) {
 			intConfig.find(configKey(metadata.guid, "CaptureQueueCapacity"));
 		expect(configured != intConfig.end() && configured->second == 64,
 			"capture queue capacity is clamped to its secure minimum");
+		const auto queueMemoryLimit = intConfig.find(
+			configKey(metadata.guid, "CaptureQueueMemoryLimitMiB"));
+		expect(queueMemoryLimit != intConfig.end() &&
+			queueMemoryLimit->second == 64,
+			"capture queue memory limit is clamped to its safe maximum");
+		const auto clipboardLimit =
+			intConfig.find(configKey(metadata.guid, "ClipboardLimitMiB"));
+		expect(clipboardLimit != intConfig.end() && clipboardLimit->second == 64,
+			"clipboard output limit is clamped to its safe maximum");
 	}
 	expect(activeHookCount() >= 10, "runtime load registers expected hooks");
 	expect(uiCommandCount() == 2, "runtime load registers both UI commands");
@@ -1342,6 +1362,16 @@ int main(int argc, char** argv) {
 				const auto inspected = windowText(inspector);
 				expect(inspected.find(L"SMOKE_PASSWORD") == std::wstring::npos,
 					"decoded inspector does not expose credential material");
+				const auto addressLine = std::wstring(L"Address: ") +
+					listViewText(listView, passwordRow, 6);
+				const auto portLine = std::wstring(L"Port: ") +
+					listViewText(listView, passwordRow, 7);
+				const auto peerLine = std::wstring(L"Peer: ") +
+					listViewText(listView, passwordRow, 8);
+				expect(inspected.find(addressLine) != std::wstring::npos &&
+					inspected.find(portLine) != std::wstring::npos &&
+					inspected.find(peerLine) != std::wstring::npos,
+					"decoded inspector includes address, port, and peer context");
 				const auto firstColon = inspected.find(L':');
 				if(firstColon != std::wstring::npos && firstColon + 2 < inspected.size()) {
 					const auto labelColor = characterColor(inspector, 0);
@@ -1394,10 +1424,10 @@ int main(int argc, char** argv) {
 					std::wstring::npos : inspected.find(raw, rawHeader);
 				const auto validationColor = validationBegin == std::wstring::npos ?
 					CLR_INVALID : characterColor(inspector,
-						static_cast<LONG>(validationBegin + 12));
+						richEditOffset(inspected, validationBegin + 12));
 				const auto rawColor = rawBegin == std::wstring::npos ?
 					CLR_INVALID : characterColor(
-						inspector, static_cast<LONG>(rawBegin));
+						inspector, richEditOffset(inspected, rawBegin));
 				expect(validationColor != CLR_INVALID && rawColor != CLR_INVALID &&
 					rawColor == validationColor, label);
 			};

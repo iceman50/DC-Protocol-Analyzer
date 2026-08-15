@@ -36,7 +36,7 @@
 
 namespace protocol_analyzer::ui {
 
-struct Palette {
+struct ThemePalette {
 	COLORREF window;
 	COLORREF panel;
 	COLORREF text;
@@ -94,8 +94,8 @@ public:
 	}
 };
 
-inline const Palette& palette() {
-	static const Palette light {
+inline const ThemePalette& palette() {
+	static const ThemePalette light {
 		RGB(246, 248, 251),
 		RGB(255, 255, 255),
 		RGB(30, 41, 59),
@@ -108,7 +108,7 @@ inline const Palette& palette() {
 		RGB(22, 163, 74),
 		RGB(220, 38, 38)
 	};
-	static const Palette dark {
+	static const ThemePalette dark {
 		RGB(15, 23, 42),
 		RGB(30, 41, 59),
 		RGB(226, 232, 240),
@@ -121,7 +121,7 @@ inline const Palette& palette() {
 		RGB(74, 222, 128),
 		RGB(248, 113, 113)
 	};
-	static Palette highContrast {};
+	static ThemePalette highContrast {};
 	if(isHighContrast()) {
 		highContrast.window = ::GetSysColor(COLOR_WINDOW);
 		highContrast.panel = ::GetSysColor(COLOR_WINDOW);

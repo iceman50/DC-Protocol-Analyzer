@@ -21,7 +21,7 @@
 #include "GUI.h"
 #include "ProtocolAnalyzer.h"
 #include "SettingsDlg.h"
-#include "TableColors.h"
+#include "Palette.h"
 #include "UIStyles.h"
 
 #include <pluginsdk/Config.h>
@@ -68,6 +68,8 @@ using dcapi::Util;
 
 using namespace dwt;
 
+namespace Palette = protocol_analyzer::ui::Palette;
+
 std::atomic_bool GUI::unloading { false };
 
 WindowPtr window;
@@ -103,6 +105,8 @@ static const ColumnInfo cols[] = {
 	{ "Summary", 240, false },
 	{ "Raw", 360, false }
 };
+static_assert(sizeof(cols) / sizeof(cols[0]) == static_cast<size_t>(COLUMN_LAST),
+	"Every table column must have context-menu metadata");
 
 namespace {
 constexpr size_t MAX_TIMESTAMP_FORMAT_CHARS = 64;
@@ -110,6 +114,7 @@ constexpr size_t MAX_REGEX_CHARS = 256;
 constexpr size_t MAX_REGEX_FIELD_BYTES = 4096;
 constexpr size_t MAX_LOG_FILE_BYTES = 10 * 1024 * 1024;
 constexpr size_t MAX_LOG_BATCH_BYTES = 8 * 1024 * 1024;
+constexpr size_t BYTES_PER_MIB = 1024 * 1024;
 constexpr unsigned LOG_ROTATION_COUNT = 3;
 constexpr size_t MAX_PENDING_BLOOM_REQUESTS = 32;
 constexpr size_t MAX_PENDING_BLOOM_PAYLOADS = 32;
@@ -118,6 +123,19 @@ constexpr size_t MAX_PENDING_BLOOM_PAYLOADS = 32;
 // pointer from being scanned as a C string.
 constexpr auto BLOOM_REQUEST_LIFETIME = std::chrono::seconds(29);
 constexpr auto BLOOM_PAYLOAD_LIFETIME = std::chrono::seconds(4);
+
+/*
+ * Clipboard::setData creates a UTF-16 GlobalAlloc block in Unicode builds.
+ * Convert the configured byte ceiling to a character budget and reserve one
+ * code unit for the terminating NUL that the clipboard allocation includes.
+ */
+size_t limitMiBToBytes(int32_t limitMiB) noexcept {
+	return static_cast<size_t>(limitMiB) * BYTES_PER_MIB;
+}
+
+size_t clipboardCharacterLimit(int32_t limitMiB) noexcept {
+	return limitMiBToBytes(limitMiB) / sizeof(TCHAR) - 1;
+}
 
 enum class BloomHeaderKind {
 	None,
@@ -271,6 +289,42 @@ const tstring* getColumnText(const Item& item, int column) noexcept {
 	case COLUMN_MESSAGE:   return &item.safeMessage();
 	default:                return nullptr;
 	}
+}
+
+/*
+ * Capture metadata is supplied by the host rather than the wire parser. Escape
+ * line-breaking controls before adding it to the inspector so a peer name or
+ * address cannot forge another labeled inspector row.
+ */
+tstring sanitizeInspectorMetadata(const tstring& value) {
+	constexpr size_t MAX_METADATA_CHARS = 4096;
+	static const TCHAR hex[] = _T("0123456789ABCDEF");
+	tstring result;
+	result.reserve(std::min(value.size(), MAX_METADATA_CHARS));
+	const auto length = std::min(value.size(), MAX_METADATA_CHARS);
+	for(size_t i = 0; i < length; ++i) {
+		const auto ch = value[i];
+		if(ch == _T('\r')) {
+			result += _T("\\r");
+		} else if(ch == _T('\n')) {
+			result += _T("\\n");
+		} else if(ch == _T('\t')) {
+			result += _T("\\t");
+		} else {
+			const auto code = static_cast<unsigned int>(ch);
+			if(code < 0x20U || code == 0x7fU) {
+				result += _T("\\x");
+				result += hex[(code >> 4) & 0x0fU];
+				result += hex[code & 0x0fU];
+			} else {
+				result += ch;
+			}
+		}
+	}
+	if(value.size() > length) {
+		result += _T("...");
+	}
+	return result;
 }
 
 bool columnTextOverflows(dwt::TablePtr owner, int column, const tstring& text) noexcept
@@ -564,8 +618,8 @@ bool appendUtf8Log(const string& configuredPath, const string& data, tstring& er
 
 LRESULT drawTableHeader(NMCUSTOMDRAW& data) {
 	const auto& colors = protocol_analyzer::ui::palette();
-	const auto headerBackground = TableColors::get(TableColors::Role::HeaderBackground);
-	const auto headerText = TableColors::get(TableColors::Role::HeaderText);
+	const auto headerBackground = Palette::get(Palette::Role::HeaderBackground);
+	const auto headerText = Palette::get(Palette::Role::HeaderText);
 
 	if(data.dwDrawStage == CDDS_PREPAINT) {
 		return CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT;
@@ -739,7 +793,7 @@ int inspectorOffset(const tstring& text, size_t offset) {
 }
 
 void formatInspectorRange(const tstring& text, size_t begin, size_t end,
-	TableColors::Role role, bool bold = false)
+	Palette::Role role, bool bold = false)
 {
 	if(!inspectorBox || begin >= end || begin >= text.size()) {
 		return;
@@ -752,47 +806,47 @@ void formatInspectorRange(const tstring& text, size_t begin, size_t end,
 	format.cbSize = sizeof(format);
 	format.dwMask = CFM_COLOR | CFM_BOLD;
 	format.dwEffects = bold ? CFE_BOLD : 0;
-	format.crTextColor = TableColors::get(role);
+	format.crTextColor = Palette::get(role);
 	inspectorBox->sendMessage(
 		EM_SETCHARFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&format));
 }
 
-TableColors::Role inspectorValidationRole(const tstring& value) {
+Palette::Role inspectorValidationRole(const tstring& value) {
 	if(value == _T("Valid")) {
-		return TableColors::Role::InspectorValid;
+		return Palette::Role::InspectorValid;
 	}
 	if(value == _T("Invalid")) {
-		return TableColors::Role::InspectorError;
+		return Palette::Role::InspectorError;
 	}
-	return TableColors::Role::InspectorWarning;
+	return Palette::Role::InspectorWarning;
 }
 
-TableColors::Role rawValidationRole(const tstring& validation,
-	TableColors::Role normalRole)
+Palette::Role rawValidationRole(const tstring& validation,
+	Palette::Role normalRole)
 {
 	if(validation == _T("Invalid")) {
-		return TableColors::Role::InspectorError;
+		return Palette::Role::InspectorError;
 	}
 	if(validation == _T("Warning")) {
-		return TableColors::Role::InspectorWarning;
+		return Palette::Role::InspectorWarning;
 	}
 	return normalRole;
 }
 
-TableColors::Role inspectorProtocolRole(const tstring& value) {
+Palette::Role inspectorProtocolRole(const tstring& value) {
 	if(value == _T("ADC")) {
-		return TableColors::Role::Adc;
+		return Palette::Role::Adc;
 	}
 	if(value == _T("NMDC")) {
-		return TableColors::Role::Nmdc;
+		return Palette::Role::Nmdc;
 	}
 	if(value == _T("UDP")) {
-		return TableColors::Role::Udp;
+		return Palette::Role::Udp;
 	}
 	if(value == _T("DHT")) {
-		return TableColors::Role::Dht;
+		return Palette::Role::Dht;
 	}
-	return TableColors::Role::InspectorValue;
+	return Palette::Role::InspectorValue;
 }
 
 void forceInspectorRedraw() {
@@ -823,7 +877,7 @@ void renderInspectorText(const tstring& text) {
 		dwt::util::HoldRedraw hold(inspectorBox);
 		setInspectorPlainText(text);
 		formatInspectorRange(text, 0, text.size(),
-			TableColors::Role::InspectorText);
+			Palette::Role::InspectorText);
 
 		enum class Section {
 			Metadata,
@@ -832,7 +886,7 @@ void renderInspectorText(const tstring& text) {
 			Raw
 		};
 		Section section = Section::Metadata;
-		auto rawRole = TableColors::Role::InspectorRaw;
+		auto rawRole = Palette::Role::InspectorRaw;
 		size_t lineBegin = 0;
 		while(lineBegin < text.size()) {
 			auto lineEnd = text.find_first_of(_T("\r\n"), lineBegin);
@@ -843,24 +897,24 @@ void renderInspectorText(const tstring& text) {
 
 			if(line == _T("Fields:")) {
 				formatInspectorRange(text, lineBegin, lineEnd,
-					TableColors::Role::InspectorHeading, true);
+					Palette::Role::InspectorHeading, true);
 				section = Section::Fields;
 			} else if(line == _T("Warnings:")) {
 				formatInspectorRange(text, lineBegin, lineEnd,
-					TableColors::Role::InspectorWarning, true);
+					Palette::Role::InspectorWarning, true);
 				section = Section::Warnings;
 			} else if(line == _T("Raw (sensitive values redacted):") ||
 				line == _T("Raw (redaction disabled):"))
 			{
 				formatInspectorRange(text, lineBegin, lineEnd,
-					TableColors::Role::InspectorHeading, true);
+					Palette::Role::InspectorHeading, true);
 				section = Section::Raw;
 			} else if(!line.empty() && section == Section::Raw) {
 				formatInspectorRange(text, lineBegin, lineEnd,
 					rawRole);
 			} else if(!line.empty() && section == Section::Warnings) {
 				formatInspectorRange(text, lineBegin, lineEnd,
-					TableColors::Role::InspectorWarning);
+					Palette::Role::InspectorWarning);
 			} else if(!line.empty() && section == Section::Fields) {
 				const size_t contentBegin = line.find_first_not_of(_T(" \t"));
 				const size_t fieldBegin = contentBegin == tstring::npos ?
@@ -871,34 +925,34 @@ void renderInspectorText(const tstring& text) {
 				if(separator != tstring::npos) {
 					formatInspectorRange(text, lineBegin + fieldBegin,
 						lineBegin + separator,
-						TableColors::Role::InspectorFieldCode, true);
+						Palette::Role::InspectorFieldCode, true);
 				}
 				const auto colon = line.find(_T(':'), nameBegin);
 				if(colon != tstring::npos) {
 					formatInspectorRange(text, lineBegin + nameBegin,
 						lineBegin + colon + 1,
-						TableColors::Role::InspectorLabel, true);
+						Palette::Role::InspectorLabel, true);
 					const auto valueBegin = std::min(colon + 2, line.size());
 					formatInspectorRange(text, lineBegin + valueBegin, lineEnd,
-						TableColors::Role::InspectorValue);
+						Palette::Role::InspectorValue);
 				}
 			} else if(!line.empty()) {
 				const auto colon = line.find(_T(':'));
 				if(colon != tstring::npos) {
 					formatInspectorRange(text, lineBegin, lineBegin + colon + 1,
-						TableColors::Role::InspectorLabel, true);
+						Palette::Role::InspectorLabel, true);
 					const auto valueBegin = std::min(colon + 2, line.size());
-					auto valueRole = TableColors::Role::InspectorValue;
+					auto valueRole = Palette::Role::InspectorValue;
 					if(line.compare(0, colon, _T("Validation")) == 0) {
 						const auto validation = line.substr(valueBegin);
 						valueRole = inspectorValidationRole(validation);
 						rawRole = rawValidationRole(validation,
-							TableColors::Role::InspectorRaw);
+							Palette::Role::InspectorRaw);
 					} else if(line.compare(0, colon, _T("Protocol")) == 0) {
 						valueRole = inspectorProtocolRole(line.substr(valueBegin));
 					}
 					formatInspectorRange(text, lineBegin + valueBegin, lineEnd,
-						valueRole, valueRole != TableColors::Role::InspectorValue);
+						valueRole, valueRole != Palette::Role::InspectorValue);
 				}
 			}
 
@@ -931,8 +985,8 @@ void refreshInspectorPalette() {
 		// reapplies every syntax span using the selected palette.
 		setInspectorPlainText(tstring());
 		inspectorBox->setColor(
-			TableColors::get(TableColors::Role::InspectorText),
-			TableColors::get(TableColors::Role::InspectorBackground));
+			Palette::get(Palette::Role::InspectorText),
+			Palette::get(Palette::Role::InspectorBackground));
 	}
 	renderInspectorText(text);
 }
@@ -941,6 +995,8 @@ void refreshInspectorPalette() {
 
 GUI::GUI() :
 	messageQueueCapacity(DEFAULT_CAPTURE_QUEUE_CAPACITY),
+	messageQueueByteCapacity(
+		limitMiBToBytes(DEFAULT_CAPTURE_QUEUE_MEMORY_MIB)),
 	messagesBytes(0),
 	captureGeneration(0),
 	pendingDroppedMessages(0),
@@ -992,9 +1048,48 @@ size_t GUI::normalizeCaptureQueueCapacity(int64_t capacity) noexcept {
 	return static_cast<size_t>(capacity);
 }
 
-void GUI::loadCaptureQueueCapacity() {
+int32_t GUI::normalizeCaptureQueueMemoryLimitMiB(int64_t limit) noexcept {
+	if(limit < MIN_CAPTURE_QUEUE_MEMORY_MIB) {
+		return MIN_CAPTURE_QUEUE_MEMORY_MIB;
+	}
+	if(limit > MAX_CAPTURE_QUEUE_MEMORY_MIB) {
+		return MAX_CAPTURE_QUEUE_MEMORY_MIB;
+	}
+	return static_cast<int32_t>(limit);
+}
+
+int32_t GUI::getCaptureQueueMemoryLimitMiB() {
+	const auto configured =
+		Config::getIntConfig("CaptureQueueMemoryLimitMiB");
+	return configured == 0 ? DEFAULT_CAPTURE_QUEUE_MEMORY_MIB :
+		normalizeCaptureQueueMemoryLimitMiB(configured);
+}
+
+int32_t GUI::normalizeClipboardLimitMiB(int64_t limit) noexcept {
+	if(limit < MIN_CLIPBOARD_LIMIT_MIB) {
+		return MIN_CLIPBOARD_LIMIT_MIB;
+	}
+	if(limit > MAX_CLIPBOARD_LIMIT_MIB) {
+		return MAX_CLIPBOARD_LIMIT_MIB;
+	}
+	return static_cast<int32_t>(limit);
+}
+
+int32_t GUI::getClipboardLimitMiB() {
+	const auto configured = Config::getIntConfig("ClipboardLimitMiB");
+	return configured == 0 ? DEFAULT_CLIPBOARD_LIMIT_MIB :
+		normalizeClipboardLimitMiB(configured);
+}
+
+void GUI::setClipboardLimitMiB(int32_t limit) {
+	Config::setConfig("ClipboardLimitMiB",
+		normalizeClipboardLimitMiB(limit));
+}
+
+void GUI::loadCaptureQueueLimits() {
 	setCaptureQueueCapacity(normalizeCaptureQueueCapacity(
 		Config::getIntConfig("CaptureQueueCapacity")));
+	setCaptureQueueMemoryLimitMiB(getCaptureQueueMemoryLimitMiB());
 }
 
 void GUI::setCaptureQueueCapacity(size_t capacity) {
@@ -1021,6 +1116,30 @@ void GUI::setCaptureQueueCapacity(size_t capacity) {
 		}
 	}
 	// Release discarded strings after the callback-facing queue lock is free.
+}
+
+void GUI::setCaptureQueueMemoryLimitMiB(int32_t limit) {
+	limit = normalizeCaptureQueueMemoryLimitMiB(limit);
+	Config::setConfig("CaptureQueueMemoryLimitMiB", limit);
+
+	std::vector<std::unique_ptr<Message>> discarded;
+	{
+		std::lock_guard<std::mutex> lock(messagesMutex);
+		messageQueueByteCapacity = limitMiBToBytes(limit);
+		while(!messages.empty() && messagesBytes > messageQueueByteCapacity) {
+			auto message = std::move(messages.back());
+			messages.pop_back();
+			const auto bytes = message ? message->storageBytes : size_t { 0 };
+			messagesBytes = bytes <= messagesBytes ? messagesBytes - bytes : 0;
+			saturatingAdd(pendingDroppedMessages, uint64_t { 1 });
+			saturatingAdd(pendingDroppedBytes, static_cast<uint64_t>(bytes));
+			discarded.emplace_back(std::move(message));
+		}
+		if(messages.empty()) {
+			messagesBytes = 0;
+		}
+	}
+	// Release discarded message storage after the callback-facing lock is free.
 }
 
 GUI::~GUI() {
@@ -1290,6 +1409,11 @@ void GUI::create() {
 			auto menu = window->addChild(Menu::Seed());
 			auto hasSel = table->hasSelected();
 			menu->appendItem(_T("Copy selected messages"), [this] { copy(); }, nullptr, hasSel);
+			auto copyColumnMenu = menu->appendPopup(_T("Copy column"));
+			for(int column = COLUMN_FIRST; column < COLUMN_LAST; ++column) {
+				copyColumnMenu->appendItem(Util::toT(cols[column].name),
+					[this, column] { copyColumn(column); }, nullptr, hasSel);
+			}
 			menu->appendItem(_T("Copy decoded analysis"), [] {
 				if(inspectorBox && !inspectorBox->getText().empty()) {
 					dwt::Clipboard::setData(inspectorBox->getText(), window);
@@ -1737,8 +1861,8 @@ void GUI::create() {
 		inspectorContent->setWidget(inspectorBox, 0, 0);
 		addThemeUpdate([] { protocol_analyzer::ui::ScrollBarStyle::apply(inspectorBox); });
 		inspectorBox->setColor(
-			TableColors::get(TableColors::Role::InspectorText),
-			TableColors::get(TableColors::Role::InspectorBackground));
+			Palette::get(Palette::Role::InspectorText),
+			Palette::get(Palette::Role::InspectorBackground));
 		renderInspectorText(
 			_T("Select a captured message to decode its fields."));
 		inspectorBox->setAccessibleName(_T("Decoded protocol message details"));
@@ -1834,7 +1958,7 @@ void GUI::create() {
 
 	table->setFocus();
 	const auto tableBackground = getTableBackground();
-	table->setColor(TableColors::get(TableColors::Role::Text), tableBackground);
+	table->setColor(Palette::get(Palette::Role::Text), tableBackground);
 	updateStatus();
 
 	window->setTimer([this]() -> bool {
@@ -2000,8 +2124,8 @@ void GUI::write(bool sending, ProtocolType proto, string ip, decltype(Connection
 	std::lock_guard<std::mutex> lock(messagesMutex);
 	msg->generation = captureGeneration;
 	if(messages.size() < messageQueueCapacity &&
-		msg->storageBytes <= MESSAGE_QUEUE_BYTE_CAPACITY &&
-		messagesBytes <= MESSAGE_QUEUE_BYTE_CAPACITY - msg->storageBytes)
+		msg->storageBytes <= messageQueueByteCapacity &&
+		messagesBytes <= messageQueueByteCapacity - msg->storageBytes)
 	{
 		messagesBytes += msg->storageBytes;
 		messages.emplace_back(std::move(msg));
@@ -2058,7 +2182,7 @@ void GUI::openSettings() {
 		}
 		const auto tableBackground = getTableBackground();
 		table->setColor(
-			TableColors::get(TableColors::Role::Text), tableBackground);
+			Palette::get(Palette::Role::Text), tableBackground);
 		redrawTable();
 	}
 }
@@ -2165,6 +2289,9 @@ void GUI::timer() {
 		item->timestamp = timeText;
 		item->index = Util::toT(std::to_string(counter));
 		item->dir = message.sending ? _T("Out") : _T("In");
+		// Keep the host-provided transport in the table (notably UDP). The
+		// analyzer's independently detected ADC/NMDC/Unknown family is shown in
+		// the inspector, so ambiguous datagrams are never relabeled in history.
 		item->protocol = Util::toT(message.protocol);
 		item->command = Util::toT(analysis.command);
 		item->category = Util::toT(analysis.category);
@@ -2223,8 +2350,10 @@ void GUI::timer() {
 }
 
 void GUI::copy() {
+	const auto limitMiB = getClipboardLimitMiB();
+	const auto maxCopyChars = clipboardCharacterLimit(limitMiB);
 	tstring str;
-	str.reserve(std::min<size_t>(MAX_COPY_CHARS, visibleItems.size() * 160));
+	str.reserve(std::min(maxCopyChars, visibleItems.size() * 160));
 	bool truncated = false;
 
 	int i = -1;
@@ -2237,9 +2366,9 @@ void GUI::copy() {
 				item.port + _T(" (") + item.peer + _T("): ") +
 				item.safeMessage();
 			const size_t separator = str.empty() ? 0 : 2;
-			if(line.size() > MAX_COPY_CHARS ||
-				str.size() > MAX_COPY_CHARS - std::min(line.size() + separator,
-					MAX_COPY_CHARS))
+			const size_t required = line.size() + separator;
+			if(required > maxCopyChars ||
+				str.size() > maxCopyChars - required)
 			{
 				truncated = true;
 				break;
@@ -2256,8 +2385,60 @@ void GUI::copy() {
 	}
 	if(truncated && window) {
 		dwt::MessageBox(window).show(
-			_T("The selection exceeded the 4 MiB clipboard safety limit. ")
+			_T("The selection exceeded the configured ") +
+			Util::toT(std::to_string(limitMiB)) + _T(" MiB clipboard safety limit. ") +
 			_T("Only the rows that fit were copied."),
+			_T("Protocol Analyzer"), dwt::MessageBox::BOX_OK,
+			dwt::MessageBox::BOX_ICONINFORMATION);
+	}
+}
+
+void GUI::copyColumn(int column) {
+	if(!table || column < COLUMN_FIRST || column >= COLUMN_LAST) {
+		return;
+	}
+
+	const auto limitMiB = getClipboardLimitMiB();
+	const auto maxCopyChars = clipboardCharacterLimit(limitMiB);
+	tstring text;
+	text.reserve(std::min(maxCopyChars, visibleItems.size() * 64));
+	bool copiedAny = false;
+	bool truncated = false;
+	for(int row = table->getNext(-1, LVNI_SELECTED); row != -1;
+		row = table->getNext(row, LVNI_SELECTED))
+	{
+		if(row < 0 || static_cast<size_t>(row) >= visibleItems.size() ||
+			!visibleItems[static_cast<size_t>(row)])
+		{
+			continue;
+		}
+		const auto value = getColumnText(
+			*visibleItems[static_cast<size_t>(row)], column);
+		if(!value) {
+			continue;
+		}
+
+		const size_t separator = copiedAny ? 2 : 0;
+		const size_t required = value->size() + separator;
+		if(required > maxCopyChars || text.size() > maxCopyChars - required) {
+			truncated = true;
+			break;
+		}
+		if(separator) {
+			text += _T("\r\n");
+		}
+		text += *value;
+		copiedAny = true;
+	}
+
+	if(copiedAny) {
+		dwt::Clipboard::setData(text, window);
+	}
+	if(truncated && window) {
+		dwt::MessageBox(window).show(
+			_T("The selected column exceeded the configured ") +
+			Util::toT(std::to_string(limitMiB)) + _T(" MiB clipboard safety limit. ") +
+			_T("Only the values that fit were copied."),
 			_T("Protocol Analyzer"), dwt::MessageBox::BOX_OK,
 			dwt::MessageBox::BOX_ICONINFORMATION);
 	}
@@ -2281,8 +2462,22 @@ void GUI::updateInspector() {
 	}
 
 	const auto& item = *visibleItems[static_cast<size_t>(selected)];
-	renderInspectorText(item.details.empty() ?
-		_T("Analysis unavailable. Raw message was not retained.") : item.details);
+	auto details = item.details.empty() ?
+		tstring(_T("Analysis unavailable. Raw message was not retained.")) :
+		item.details;
+	const auto captureMetadata =
+		_T("\r\nAddress: ") + sanitizeInspectorMetadata(item.ip) +
+		_T("\r\nPort: ") + sanitizeInspectorMetadata(item.port) +
+		_T("\r\nPeer: ") + sanitizeInspectorMetadata(item.peer);
+	// Protocol remains the first inspector row. Capture context follows it,
+	// before command semantics and decoded fields, for quick endpoint lookup.
+	const auto firstLineEnd = details.find(_T("\r\n"));
+	if(firstLineEnd == tstring::npos) {
+		details += captureMetadata;
+	} else {
+		details.insert(firstLineEnd, captureMetadata);
+	}
+	renderInspectorText(details);
 }
 
 void GUI::clear() {
@@ -2371,61 +2566,61 @@ LRESULT GUI::handleCustomDraw(NMLVCUSTOMDRAW& data) {
 			data.nmcd.uItemState &= ~CDIS_SELECTED;
 		}
 		if(selected) {
-			data.clrText = TableColors::get(TableColors::Role::SelectionText);
-			data.clrTextBk = TableColors::get(TableColors::Role::SelectionBackground);
+			data.clrText = Palette::get(Palette::Role::SelectionText);
+			data.clrTextBk = Palette::get(Palette::Role::SelectionBackground);
 			return CDRF_NEWFONT;
 		}
 
-		data.clrTextBk = TableColors::get(
+		data.clrTextBk = Palette::get(
 			itemIndex % 2 == 0 ?
-				TableColors::Role::Background :
-				TableColors::Role::AlternateBackground);
+				Palette::Role::Background :
+				Palette::Role::AlternateBackground);
 		const Item& item = *visibleItems[itemIndex];
-		auto role = TableColors::Role::Text;
+		auto role = Palette::Role::Text;
 		switch(data.iSubItem) {
 			case COLUMN_TIMESTAMP:
-				role = TableColors::Role::Timestamp;
+				role = Palette::Role::Timestamp;
 				break;
 			case COLUMN_COUNT:
-				role = TableColors::Role::Counter;
+				role = Palette::Role::Counter;
 				break;
 			case COLUMN_DIRECTION:
 				role = item.dir == _T("Out") ?
-					TableColors::Role::Outgoing : TableColors::Role::Incoming;
+					Palette::Role::Outgoing : Palette::Role::Incoming;
 				break;
 			case COLUMN_PROTOCOL:
 				if(item.protocol == _T("ADC")) {
-					role = TableColors::Role::Adc;
+					role = Palette::Role::Adc;
 				} else if(item.protocol == _T("NMDC")) {
-					role = TableColors::Role::Nmdc;
+					role = Palette::Role::Nmdc;
 				} else if(item.protocol == _T("UDP")) {
-					role = TableColors::Role::Udp;
+					role = Palette::Role::Udp;
 				} else if(item.protocol == _T("DHT")) {
-					role = TableColors::Role::Dht;
+					role = Palette::Role::Dht;
 				} else {
-					role = TableColors::Role::Unknown;
+					role = Palette::Role::Unknown;
 				}
 				break;
 			case COLUMN_IP:
-				role = TableColors::Role::Address;
+				role = Palette::Role::Address;
 				break;
 			case COLUMN_PORT:
-				role = TableColors::Role::Port;
+				role = Palette::Role::Port;
 				break;
 			case COLUMN_PEER:
-				role = TableColors::Role::Peer;
+				role = Palette::Role::Peer;
 				break;
 			case COLUMN_SUMMARY:
-				role = TableColors::Role::Message;
+				role = Palette::Role::Message;
 				break;
 			case COLUMN_MESSAGE:
 				role = rawValidationRole(
-					item.validation, TableColors::Role::Message);
+					item.validation, Palette::Role::Message);
 				break;
 			default:
 				break;
 		}
-		data.clrText = TableColors::get(role);
+		data.clrText = Palette::get(role);
 		return CDRF_NEWFONT;
 	}
 
@@ -2847,7 +3042,7 @@ void GUI::handleDpiChanged(unsigned oldDpi, unsigned newDpi) {
 }
 
 COLORREF GUI::getTableBackground() const {
-	return TableColors::get(TableColors::Role::Background);
+	return Palette::get(Palette::Role::Background);
 }
 
 void GUI::applyTheme() {
@@ -2866,7 +3061,7 @@ void GUI::applyTheme() {
 
 	if(table) {
 		const auto background = getTableBackground();
-		table->setColor(TableColors::get(TableColors::Role::Text), background);
+		table->setColor(Palette::get(Palette::Role::Text), background);
 	}
 
 	updateStatus();
@@ -2930,10 +3125,10 @@ void GUI::redrawTable() {
 	}
 }
 
-void GUI::refreshTableColors() {
+void GUI::refreshPalette() {
 	if(table) {
-		const auto background = TableColors::get(TableColors::Role::Background);
-		table->setColor(TableColors::get(TableColors::Role::Text), background);
+		const auto background = Palette::get(Palette::Role::Background);
+		table->setColor(Palette::get(Palette::Role::Text), background);
 		if(auto header = getTableHeader(table)) {
 			header->redraw(true);
 		}
@@ -2953,8 +3148,9 @@ void GUI::initSettings() {
 		Config::setConfig("AutoScroll", scroll);
 		Config::setConfig("KeepOnTop", keepOnTop);
 	}
-	TableColors::initialize();
-	loadCaptureQueueCapacity();
+	Palette::initialize();
+	loadCaptureQueueLimits();
+	setClipboardLimitMiB(getClipboardLimitMiB());
 
 	Config::setConfig("Dialog", true);
 	// Remove legacy filter settings that are no longer used after live-filter refactor.

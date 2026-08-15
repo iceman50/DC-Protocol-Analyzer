@@ -25,37 +25,63 @@
 
 namespace protocol_analyzer {
 
+/** Overall structural validity of the decoded frame. */
 enum class Status {
 	Valid,
 	Warning,
 	Invalid
 };
 
+/** Per-call presentation policy. Parsing and classification are unaffected. */
 struct AnalysisOptions {
 	bool redactSensitiveValues = true;
 };
 
+/** One decoded positional or named protocol value. */
 struct Field {
+	/** Stable machine-readable field identifier used by tests and renderers. */
 	std::string code;
+	/** Human-readable explanation of the field's protocol meaning. */
 	std::string name;
+	/** Sanitized decoded value, or <redacted> when policy requires it. */
 	std::string value;
+	/** True when the source value contains credentials or private identity data. */
 	bool sensitive = false;
 };
 
+/**
+ * Bounded, presentation-safe analysis of one captured frame.
+ *
+ * `family` is the decoded wire family, which may differ from the caller's
+ * transport label. In particular, a UDP capture becomes ADC or NMDC only when
+ * its framing supplies enough evidence; otherwise its family is Unknown and
+ * its routing remains UDP.
+ */
 struct Result {
+	/** Detected wire family: ADC, NMDC, DHT, or Unknown. */
 	std::string family;
+	/** Complete command token as it appeared on the wire (for example BINF). */
 	std::string command;
+	/** Family-level action without routing information (for example INF). */
 	std::string action;
+	/** Human-readable command name. */
 	std::string name;
+	/** Broad functional grouping used by filters and colors. */
 	std::string category;
+	/** Routing type or transport context. */
 	std::string routing;
+	/** Short, bounded description suitable for the capture table. */
 	std::string summary;
+	/** Sanitized and policy-redacted wire representation. */
 	std::string safeMessage;
 	std::vector<Field> fields;
 	std::vector<std::string> warnings;
 	Status status = Status::Valid;
+	/** False for unknown/vendor commands and unclassified payloads. */
 	bool known = true;
+	/** True when any source field was considered sensitive. */
 	bool sensitive = false;
+	/** Records the policy used to construct fields and safeMessage. */
 	bool redactionEnabled = true;
 	/*
 	 * A BLOM HSND command is followed by an opaque, unframed byte stream.
@@ -72,13 +98,18 @@ struct Result {
 };
 
 /*
- * Analyze one host-delivered protocol command.
+ * Analyze one host-delivered protocol command or UDP datagram.
  *
  * Input is bounded again here even though the capture layer already imposes a
  * limit. Unknown commands are retained as structured warnings, never rejected
  * or executed. safeMessage is suitable for display, clipboard output, and
  * persistent logging. Authentication/private identity values are redacted by
  * default; callers may explicitly disable redaction for diagnostic use.
+ *
+ * ADC and NMDC labels supplied by the host are authoritative because the host
+ * knows the connection negotiation. UDP is only a transport label, so its
+ * payload is classified conservatively from complete ADC/NMDC framing. Other
+ * labels are kept opaque and are never guessed from a leading character.
  */
 Result analyze(const std::string& displayedProtocol, const std::string& raw);
 Result analyze(const std::string& displayedProtocol, const std::string& raw,

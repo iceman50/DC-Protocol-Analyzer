@@ -727,7 +727,7 @@ bool Plugin::onLoad(DCCorePtr core, bool install, bool runtime) {
 		Config::setConfig("FirstRun", true);
 		Logger::log("Protocol Analyzer has been installed; check the plugins menu and the /raw chat command.");
 	}
-	gui.loadCaptureQueueCapacity();
+	gui.loadCaptureQueueLimits();
 
 	if(!Hooks::Network::onHubDataIn(
 			[this](HubDataPtr hHub, char* message, bool&) {
@@ -980,9 +980,12 @@ bool Plugin::onUDPDataIn(UDPDataPtr data, char* message) {
 	if(stopping.load() || !data || !message || !message[0]) {
 		return false;
 	}
-	const string proto = message[0] == '$' ? "NMDC Search" : "ADC Search";
+	// The hook identifies only the transport. Do not infer a wire family from
+	// one byte here; the bounded analyzer validates complete framing on the UI
+	// thread and can represent ambiguous datagrams as Unknown.
 	gui.write(false, PROTOCOL_UDP,
-		boundedString(data->ip, MAX_NETWORK_ADDRESS_LENGTH), data->port, proto,
+		boundedString(data->ip, MAX_NETWORK_ADDRESS_LENGTH), data->port,
+		"UDP datagram",
 		boundedString(message, MAX_CAPTURE_MESSAGE_LENGTH));
 	return false;
 }
@@ -991,9 +994,11 @@ bool Plugin::onUDPDataOut(UDPDataPtr data, char* message) {
 	if(stopping.load() || !data || !message || !message[0]) {
 		return false;
 	}
-	const string proto = message[0] == '$' ? "NMDC Search" : "ADC Search";
+	// Classification is intentionally centralized in ProtocolAnalyzer.cpp so
+	// incoming and outgoing datagrams follow the same evidence rules.
 	gui.write(true, PROTOCOL_UDP,
-		boundedString(data->ip, MAX_NETWORK_ADDRESS_LENGTH), data->port, proto,
+		boundedString(data->ip, MAX_NETWORK_ADDRESS_LENGTH), data->port,
+		"UDP datagram",
 		boundedString(message, MAX_CAPTURE_MESSAGE_LENGTH));
 	return false;
 }

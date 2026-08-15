@@ -923,6 +923,79 @@ int main() {
 		unknownNmdc.safeMessage.find("alpha beta") != std::string::npos,
 		"non-sensitive vendor NMDC commands remain inspectable");
 
+	// UDP is a transport rather than a negotiated wire family. These cases
+	// exercise both sides of the detector: complete framing recognizes current
+	// and future commands, while prefixes and malformed headers stay Unknown.
+	const auto udpAdc = analyze("UDP",
+		"URES " + adcCid + " FNfile.txt SI1 SL1 TOtoken");
+	expect(udpAdc.family == "ADC" && udpAdc.command == "URES" &&
+		udpAdc.status == Status::Valid,
+		"complete ADC UDP framing is detected without a transport family label");
+	const auto udpUnknownAdcAction = analyze("UDP",
+		"UXYZ " + adcCid + " AAvalue");
+	expect(udpUnknownAdcAction.family == "ADC" &&
+		!udpUnknownAdcAction.known &&
+		udpUnknownAdcAction.status == Status::Warning,
+		"structurally valid future ADC UDP actions are not missed");
+	const auto framedUnknownAdcAction = analyze("UDP", "UXYZ ABCD\n");
+	expect(framedUnknownAdcAction.family == "ADC" &&
+		!framedUnknownAdcAction.known,
+		"ADC framing preserves future actions with nonstandard CID lengths");
+
+	const auto udpNmdc = analyze("UDP",
+		"$Search 127.0.0.1:412 F?F?0?1?protocol|");
+	expect(udpNmdc.family == "NMDC" && udpNmdc.command == "$Search",
+		"complete NMDC UDP framing is detected");
+	const auto udpStrippedNmdc = analyze("UDP",
+		"$Search 127.0.0.1:412 F?F?0?1?protocol");
+	expect(udpStrippedNmdc.family == "NMDC" &&
+		udpStrippedNmdc.command == "$Search",
+		"known NMDC datagrams survive host-stripped frame delimiters");
+	const auto udpUnknownNmdcCommand = analyze("UDP",
+		"$Vendor-Datagram alpha beta|");
+	expect(udpUnknownNmdcCommand.family == "NMDC" &&
+		!udpUnknownNmdcCommand.known &&
+		udpUnknownNmdcCommand.status == Status::Warning,
+		"framed future NMDC commands are not missed");
+	const auto udpNmdcChat = analyze("UDP", "<nick> hello|");
+	expect(udpNmdcChat.family == "NMDC" &&
+		udpNmdcChat.command == "Chat",
+		"complete NMDC public-chat framing is detected");
+
+	const auto arbitraryUdp = analyze("UDP", "arbitrary application bytes");
+	const auto prefixOnlyNmdc = analyze("UDP", "$Vendor-Datagram alpha beta");
+	const auto tcpShapedAdc = analyze("UDP", "BXYZ ABCD AAvalue");
+	const auto malformedUdpAdc = analyze("UDP", "UXYZ invalid-cid AAvalue");
+	const auto incidentalAdcShape = analyze("UDP", "USER ALICE");
+	expect(arbitraryUdp.family == "Unknown" && !arbitraryUdp.known &&
+		arbitraryUdp.routing == "UDP" &&
+		arbitraryUdp.status == Status::Warning &&
+		prefixOnlyNmdc.family == "Unknown" &&
+		tcpShapedAdc.family == "Unknown" &&
+		malformedUdpAdc.family == "Unknown" &&
+		incidentalAdcShape.family == "Unknown",
+		"ambiguous or malformed datagrams are not falsely labeled ADC or NMDC");
+
+	const auto unknownTransportNmdcShape = analyze("Unknown",
+		"$Search 127.0.0.1:412 F?F?0?1?protocol|");
+	expect(unknownTransportNmdcShape.family == "Unknown" &&
+		!unknownTransportNmdcShape.known &&
+		unknownTransportNmdcShape.command == "Unknown",
+		"unknown host protocols remain opaque instead of being content-sniffed");
+	const std::string unknownTransportSecret = "UNKNOWN_TRANSPORT_SECRET";
+	const auto unknownTransportCredential = analyze("Unknown",
+		"$MyPass " + unknownTransportSecret + "|");
+	const std::string ambiguousUdpSecret = "AMBIGUOUS_UDP_SECRET";
+	const auto ambiguousUdpCredential = analyze("UDP",
+		"$VendorAuth " + ambiguousUdpSecret);
+	expect(unknownTransportCredential.family == "Unknown" &&
+		unknownTransportCredential.sensitive &&
+		!containsSecret(unknownTransportCredential, unknownTransportSecret) &&
+		ambiguousUdpCredential.family == "Unknown" &&
+		ambiguousUdpCredential.sensitive &&
+		!containsSecret(ambiguousUdpCredential, ambiguousUdpSecret),
+		"defensive credential redaction does not require a family guess");
+
 	const std::string utf8Name = "Jos\xC3\xA9";
 	const auto validUtf8 = analyze("ADC", "IINF NI" + utf8Name);
 	expect(fieldValue(validUtf8, "NI") == utf8Name &&
@@ -979,13 +1052,15 @@ int main() {
 	std::mt19937_64 random(0xDCC0FFEEULL);
 	const auto started = std::chrono::steady_clock::now();
 	bool fuzzBoundsHeld = true;
+	const char* const fuzzProtocols[] = { "ADC", "NMDC", "UDP" };
 	for(size_t iteration = 0; iteration < 20000; ++iteration) {
 		const size_t length = static_cast<size_t>(random() % 2048);
 		std::string fuzz(length, '\0');
 		for(char& ch : fuzz) {
 			ch = static_cast<char>(random() & 0xffU);
 		}
-		const auto fuzzed = analyze((iteration & 1U) ? "ADC" : "NMDC", fuzz);
+		const auto fuzzed = analyze(
+			fuzzProtocols[iteration % 3U], fuzz);
 		fuzzBoundsHeld = fuzzBoundsHeld && fuzzed.fields.size() <= 64 &&
 			fuzzed.warnings.size() <= 16 &&
 			fuzzed.safeMessage.size() <= 64 * 1024 + 1024;
@@ -993,7 +1068,8 @@ int main() {
 			break;
 		}
 	}
-	expect(fuzzBoundsHeld, "adversarial input respects parser allocation limits");
+	expect(fuzzBoundsHeld,
+		"adversarial ADC, NMDC, and UDP input respects parser allocation limits");
 	const auto elapsed = std::chrono::steady_clock::now() - started;
 	expect(elapsed < std::chrono::seconds(10),
 		"adversarial parser test completes within the performance budget");

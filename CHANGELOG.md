@@ -18,6 +18,44 @@ legacy history.
 - Added detection for NMDC delimiter-only keep-alive messages, including the
   delimiter-stripped incoming form supplied by the host, and decoding for the
   status and capability flags in the `$MyINFO` connection-status byte.
+- Added an opt-in setting to show sensitive protocol values in newly captured
+  rows and protocol logs by disabling the default redaction policy.
+- Added capture Address, Port, and Peer metadata to the decoded inspector.
+- Added a Copy column submenu that copies the selected rows from any individual
+  capture-table column while retaining the clipboard safety limit.
+- Added independent 1–64 MiB preferences for pending capture-queue memory and
+  clipboard output, retaining 4 MiB as the default for each safeguard.
+
+### Changed
+
+- Standardized UI-related namespaces by moving UI helpers under
+  `protocol_analyzer::ui` and renamed the table-specific color subsystem to
+  `Palette` because it also styles the decoded inspector. Existing
+  customized colors migrate from the legacy `Table*` configuration keys.
+- Changed UDP analysis to preserve UDP as the capture transport and classify
+  payloads as ADC or NMDC only when complete protocol framing supplies enough
+  evidence; ambiguous payloads remain Unknown.
+- Preserved structurally valid unknown and vendor-specific ADC/NMDC datagrams
+  through generic decoding so future commands are not discarded or mislabeled.
+- Added inline documentation for the analyzer API, decoder architecture,
+  framing decisions, trust boundaries, sensitive-span masking, bounded output,
+  and opaque binary-payload handling.
+- Changed warning and invalid Raw output to use the corresponding validation
+  colors in both the capture table and decoded inspector.
+
+### Security
+
+- Redacts credential-shaped content in ambiguous UDP and unknown-protocol
+  payloads without falsely assigning an ADC or NMDC family.
+- Sanitizes host-provided Address, Port, and Peer values before inserting them
+  into the inspector so control characters cannot create forged metadata rows.
+
+### Fixed
+
+- Fixed arbitrary or malformed UDP payloads being inferred as ADC by default or
+  as NMDC from a leading character alone, while retaining recognition of
+  correctly framed known, vendor-specific, and future protocol commands.
+- Fixed the custom-title-bar Close glyph rendering with uneven diagonal arms.
 
 ## [1.00] - 2026-07-25
 

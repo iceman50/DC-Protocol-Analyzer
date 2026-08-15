@@ -33,6 +33,24 @@ namespace {
 using std::string;
 using std::string_view;
 
+/*
+ * Decoder architecture
+ * --------------------
+ * 1. The public dispatcher chooses a wire family. Negotiated ADC/NMDC
+ *    connection labels are authoritative; only transport-neutral UDP is
+ *    inspected. UDP detection validates framing rather than assuming that
+ *    every non-NMDC packet is ADC.
+ * 2. A family parser validates routing and command-specific structure while
+ *    preserving unknown extension commands through a generic field decoder.
+ * 3. Sensitive spans are collected against the original bounded frame and
+ *    masked before safeMessage leaves this translation unit.
+ * 4. Every string copied into Result is bounded and sanitized so GUI, logging,
+ *    and clipboard consumers do not need to handle untrusted wire bytes.
+ *
+ * Keep family detection deliberately separate from semantic decoding. A new
+ * command should not need to be present in a definition table to be recognized
+ * as protocol traffic, but weak prefixes alone must not relabel arbitrary UDP.
+ */
 constexpr size_t MAX_ANALYZER_INPUT_BYTES = 64 * 1024;
 constexpr size_t MAX_FIELDS = 64;
 constexpr size_t MAX_WARNINGS = 16;
@@ -45,6 +63,7 @@ struct Span {
 	size_t length;
 };
 
+/** Metadata only; command syntax remains valid when no table entry exists. */
 struct Definition {
 	const char* command;
 	const char* name;
@@ -400,6 +419,7 @@ string_view trimAscii(string_view value) {
 	return value;
 }
 
+/* Remove framing only after the dispatcher has selected a wire family. */
 string_view trimProtocolEnd(string_view value) {
 	while(!value.empty() &&
 		(value.back() == '\r' || value.back() == '\n' || value.back() == '|'))
@@ -418,6 +438,7 @@ string bounded(string_view value, size_t limit = MAX_FIELD_VALUE_BYTES) {
 	return result;
 }
 
+/* Validate one UTF-8 sequence without reading beyond the supplied view. */
 size_t validUtf8SequenceLength(string_view value, size_t offset) {
 	const auto remaining = value.size() - offset;
 	const auto first = static_cast<unsigned char>(value[offset]);
@@ -458,6 +479,10 @@ size_t validUtf8SequenceLength(string_view value, size_t offset) {
 	return 0;
 }
 
+/*
+ * Escape controls and invalid UTF-8 while respecting a byte limit. This is
+ * the common trust boundary for every string later consumed by the UI.
+ */
 string sanitize(string_view value, size_t limit) {
 	string result;
 	result.reserve(std::min(limit, value.size()));
@@ -512,6 +537,7 @@ void setSummary(Result& result, string value) {
 	result.summary = std::move(value);
 }
 
+/* Add a bounded diagnostic and monotonically worsen the aggregate status. */
 void addWarning(Result& result, string warning, bool invalid = false) {
 	if(result.warnings.size() < MAX_WARNINGS) {
 		if(warning.size() > 256) {
@@ -526,6 +552,10 @@ void addWarning(Result& result, string warning, bool invalid = false) {
 	}
 }
 
+/*
+ * Add one bounded field and apply presentation redaction at insertion time.
+ * The separate source-span mask protects safeMessage from the same secret.
+ */
 void addField(Result& result, string code, string name, string value, bool sensitive = false) {
 	if(result.fields.size() >= MAX_FIELDS) {
 		if(result.fields.size() == MAX_FIELDS) {
@@ -547,6 +577,7 @@ void addField(Result& result, string code, string name, string value, bool sensi
 	result.sensitive = result.sensitive || sensitive;
 }
 
+/* Lookups enrich known actions but never decide whether framing is ADC/NMDC. */
 const Definition* findDefinition( const Definition* first, const Definition* last, string_view command) {
 	const auto i = std::find_if(first, last, [command](const Definition& definition) {
 		return command == definition.command;
@@ -894,6 +925,11 @@ bool isCredentialLikeNmdcCommand(string_view command) {
 		asciiContainsNoCase(command, "credential");
 }
 
+/*
+ * Pre-scan every ADC frame in a batched capture for credential-shaped fields.
+ * This defense runs before structural decoding so malformed trailing frames
+ * cannot smuggle secrets into the raw presentation.
+ */
 void findAdcSecurityMasks(string_view raw, std::vector<Span>& masks) {
 	size_t lineStart = 0;
 	while(lineStart < raw.size()) {
@@ -942,6 +978,7 @@ void findAdcSecurityMasks(string_view raw, std::vector<Span>& masks) {
 	}
 }
 
+/* NMDC counterpart to findAdcSecurityMasks, including vendor auth commands. */
 void findNmdcSecurityMasks(string_view raw, std::vector<Span>& masks) {
 	size_t frameStart = 0;
 	while(frameStart < raw.size()) {
@@ -983,6 +1020,7 @@ void findNmdcSecurityMasks(string_view raw, std::vector<Span>& masks) {
 	}
 }
 
+/* Merge overlapping source spans, replace them back-to-front, then sanitize. */
 string applyMasks(string_view raw, std::vector<Span> masks, bool redactionEnabled) {
 	if(!redactionEnabled) {
 		return sanitize(raw, MAX_ANALYZER_INPUT_BYTES + 1024);
@@ -1039,6 +1077,7 @@ void validateAdcSid(Result& result, string_view sid, const char* label) {
 	}
 }
 
+/* Decode ADC's two-character named fields from the first unconsumed token. */
 void parseAdcNamedFields(Result& result, string_view whole, const std::vector<string_view>& tokens, size_t start, std::vector<Span>& masks, bool forceSensitive = false) {
 	for(size_t i = start; i < tokens.size(); ++i) {
 		const auto token = tokens[i];
@@ -1070,6 +1109,7 @@ void parseAdcNamedFields(Result& result, string_view whole, const std::vector<st
 	}
 }
 
+/* Preserve extension actions without inventing command-specific semantics. */
 void parseAdcGenericParameters(Result& result, string_view whole, const std::vector<string_view>& tokens, size_t start, std::vector<Span>& masks) {
 	size_t positionalIndex = 1;
 	for(size_t i = start; i < tokens.size(); ++i) {
@@ -1378,6 +1418,11 @@ void buildAdcSummary(Result& result) {
 	setSummary(result, prefix + (result.name.empty() ? result.action : result.name));
 }
 
+/*
+ * Decode one ADC frame after its connection context or UDP grammar has been
+ * established. Unknown three-character actions still follow ADC header rules
+ * and are retained through parseAdcGenericParameters.
+ */
 Result analyzeAdc(string_view raw, bool redactionEnabled) {
 	Result result;
 	result.family = "ADC";
@@ -1790,6 +1835,7 @@ void parseNmdcUrlCommand(Result& result, string_view command, string_view parame
 	setSummary(result, result.name + ": " + decodeNmdcText(value));
 }
 
+/* Preserve unrecognized NMDC extension parameters as one decoded field. */
 void genericNmdcParameters(Result& result, string_view parameters) {
 	parameters = trimAscii(parameters);
 	if(!parameters.empty()) {
@@ -2600,6 +2646,10 @@ void parseNmdcSupports(Result& result, string_view parameters) {
 		" (" + std::to_string(recognized) + " recognized)");
 }
 
+/*
+ * Decode one NMDC frame. Command dispatch is table-assisted, while unknown
+ * `$Vendor...` commands remain NMDC when connection/framing evidence says so.
+ */
 Result analyzeNmdc(string_view raw, bool redactionEnabled) {
 	Result result;
 	result.family = "NMDC";
@@ -2788,24 +2838,185 @@ Result analyzeNmdc(string_view raw, bool redactionEnabled) {
 	return result;
 }
 
+/* Keep non-ADC/NMDC host protocols bounded without guessing their grammar. */
 Result analyzeOpaque(string_view family, string_view raw, bool redactionEnabled) {
 	Result result;
 	result.redactionEnabled = redactionEnabled;
 	result.family = sanitize(family, 32);
-	result.command = result.family;
+	const bool unknownFamily = result.family.empty() ||
+		asciiEqualNoCase(result.family, "Unknown");
+	result.command = unknownFamily ? "Unknown" : result.family;
 	result.action = result.command;
-	result.name = result.family + " payload";
-	result.category = result.family;
-	result.routing = result.family;
+	result.name = unknownFamily ? "Unknown protocol payload" :
+		result.family + " payload";
+	result.category = unknownFamily ? "Unknown" : result.family;
+	result.routing = unknownFamily ? "Unknown" : result.family;
 	result.summary = result.name;
+	result.known = !unknownFamily;
+	if(unknownFamily) {
+		addWarning(result,
+			"The host did not identify this protocol; payload bytes were kept opaque.");
+	}
 	if(raw.size() > MAX_ANALYZER_INPUT_BYTES) {
 		raw = raw.substr(0, MAX_ANALYZER_INPUT_BYTES);
 		addWarning(result, "Message exceeded the analyzer input limit and was truncated.", true);
 	}
-	result.safeMessage = sanitize(raw, MAX_ANALYZER_INPUT_BYTES);
+	if(unknownFamily) {
+		// Classification and redaction are separate decisions. Retain an Unknown
+		// family while still masking recognizable ADC/NMDC credential shapes.
+		std::vector<Span> masks;
+		findAdcSecurityMasks(raw, masks);
+		findNmdcSecurityMasks(raw, masks);
+		result.sensitive = !masks.empty();
+		result.safeMessage = applyMasks(
+			raw, std::move(masks), redactionEnabled);
+	} else {
+		result.safeMessage = sanitize(raw, MAX_ANALYZER_INPUT_BYTES);
+	}
 	return result;
 }
 
+enum class DatagramFamily {
+	Unknown,
+	Adc,
+	Nmdc
+};
+
+/*
+ * NMDC has no closed command registry, so detection cannot depend solely on
+ * NMDC_DEFINITIONS. A known command is sufficient even when a host hook has
+ * removed its trailing delimiter. Unknown/vendor commands need the `|` frame
+ * delimiter as independent evidence; this prevents arbitrary strings such as
+ * shell variables beginning with `$` from being labeled NMDC.
+ */
+bool looksLikeNmdcDatagram(string_view raw) {
+	if(raw == "|") {
+		return true;
+	}
+
+	const auto delimiter = raw.find('|');
+	const auto body = raw.substr(0, delimiter);
+	if(body.empty()) {
+		return false;
+	}
+
+	if(body.front() == '<') {
+		// Public chat is the one standard NMDC frame without a `$` command.
+		// Require the complete `<nick> message|` shape when inferring from UDP.
+		const auto close = body.find('>');
+		if(delimiter == string_view::npos || close == string_view::npos ||
+			close <= 1 || close + 1 >= body.size() || body[close + 1] != ' ')
+		{
+			return false;
+		}
+		return std::none_of(body.begin() + 1, body.begin() + close,
+			[](char ch) {
+				const auto value = static_cast<unsigned char>(ch);
+				return value < 0x20U || ch == '<';
+			});
+	}
+
+	if(body.front() != '$' || body.size() < 2) {
+		return false;
+	}
+	const auto commandEnd = body.find_first_of(" \t");
+	const auto command = body.substr(0, commandEnd);
+	const auto isAsciiAlpha = [](char ch) {
+		return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z');
+	};
+	if(command.size() < 2 ||
+		!isAsciiAlpha(command[1]) ||
+		!std::all_of(command.begin() + 2, command.end(), [](char ch) {
+			const auto value = static_cast<unsigned char>(ch);
+			return value >= 0x21U && value <= 0x7eU &&
+				ch != '$' && ch != '<' && ch != '>' && ch != '|';
+		}))
+	{
+		return false;
+	}
+
+	const auto definition = findDefinition(NMDC_DEFINITIONS.data(),
+		NMDC_DEFINITIONS.data() + NMDC_DEFINITIONS.size(), command);
+	return definition != nullptr || delimiter != string_view::npos;
+}
+
+/*
+ * ADC's grammar provides stronger evidence than an action allowlist. A UDP
+ * message must use the U routing type, a three-character uppercase action,
+ * one separator, and a Base32 sender CID. Known actions survive host-stripped
+ * framing. Unknown actions additionally need an EOL or a plausibly
+ * cryptographic-length CID; without that evidence an ordinary phrase such as
+ * `USER ALICE` would be indistinguishable from an ADC extension frame.
+ */
+bool looksLikeAdcDatagram(string_view raw) {
+	const auto frameEnd = raw.find_first_of("\r\n");
+	auto body = raw.substr(0, frameEnd);
+	if(body.size() < 6 || body[0] != 'U' || body[4] != ' ' ||
+		!isAdcAlpha(body[1]) || !isAdcAlphaNum(body[2]) ||
+		!isAdcAlphaNum(body[3]))
+	{
+		return false;
+	}
+
+	const auto cidEnd = body.find(' ', 5);
+	const auto cid = body.substr(5, cidEnd == string_view::npos ?
+		string_view::npos : cidEnd - 5);
+	if(cid.empty() || !isBase32(cid)) {
+		return false;
+	}
+
+	const auto action = body.substr(1, 3);
+	const auto definition = findDefinition(ADC_DEFINITIONS.data(),
+		ADC_DEFINITIONS.data() + ADC_DEFINITIONS.size(), action);
+	constexpr size_t MIN_PLAUSIBLE_CID_LENGTH = 20;
+	return definition != nullptr || frameEnd != string_view::npos ||
+		cid.size() >= MIN_PLAUSIBLE_CID_LENGTH;
+}
+
+DatagramFamily detectDatagramFamily(string_view raw) {
+	if(looksLikeNmdcDatagram(raw)) {
+		return DatagramFamily::Nmdc;
+	}
+	if(looksLikeAdcDatagram(raw)) {
+		return DatagramFamily::Adc;
+	}
+	return DatagramFamily::Unknown;
+}
+
+/*
+ * Preserve an unrecognized datagram without running either family parser.
+ * Warning (rather than Invalid) is intentional: the bytes may belong to a
+ * protocol outside this analyzer, so no ADC/NMDC validity claim can be made.
+ */
+Result analyzeUnknownDatagram(string_view raw, bool redactionEnabled) {
+	Result result;
+	result.family = "Unknown";
+	result.command = "Unknown";
+	result.action = result.command;
+	result.name = "Unrecognized UDP datagram";
+	result.category = "Unknown";
+	result.routing = "UDP";
+	result.summary = result.name;
+	result.known = false;
+	result.redactionEnabled = redactionEnabled;
+	addField(result, "transport", "Capture transport", "UDP");
+	addWarning(result,
+		"Payload did not contain complete ADC or NMDC framing; protocol was not guessed.");
+	if(raw.size() > MAX_ANALYZER_INPUT_BYTES) {
+		raw = raw.substr(0, MAX_ANALYZER_INPUT_BYTES);
+		addWarning(result, "Message exceeded the analyzer input limit and was truncated.", true);
+	}
+	// Do not promote a credential-shaped payload to ADC/NMDC merely to redact
+	// it. The defensive scanners can mask secrets without changing family.
+	std::vector<Span> masks;
+	findAdcSecurityMasks(raw, masks);
+	findNmdcSecurityMasks(raw, masks);
+	result.sensitive = !masks.empty();
+	result.safeMessage = applyMasks(raw, std::move(masks), redactionEnabled);
+	return result;
+}
+
+/* Append only complete UTF-8 sequences within the inspector's global budget. */
 void appendBounded(string& target, string_view value) {
 	if(target.size() >= MAX_DETAIL_BYTES) {
 		return;
@@ -2837,25 +3048,40 @@ Result analyze(const std::string& displayedProtocol, const std::string& raw) {
 }
 
 Result analyze(const std::string& displayedProtocol, const std::string& raw, const AnalysisOptions& options) {
-	const bool nmdc = asciiEqualNoCase(displayedProtocol, "NMDC") ||
-		(asciiEqualNoCase(displayedProtocol, "UDP") && !raw.empty() &&
-			(raw.front() == '$' || raw.front() == '<')) ||
-		(!raw.empty() && (raw.front() == '$' || raw.front() == '<') &&
-			!asciiEqualNoCase(displayedProtocol, "ADC"));
-	if(nmdc) {
+	// A negotiated connection family is stronger evidence than payload shape.
+	// This also keeps malformed frames inside the correct parser so users see
+	// useful validation errors instead of a misleading cross-family guess.
+	if(asciiEqualNoCase(displayedProtocol, "NMDC")) {
 		return analyzeNmdc(raw, options.redactSensitiveValues);
 	}
-	if(asciiEqualNoCase(displayedProtocol, "ADC") ||
-		asciiEqualNoCase(displayedProtocol, "UDP"))
-	{
+	if(asciiEqualNoCase(displayedProtocol, "ADC")) {
 		return analyzeAdc(raw, options.redactSensitiveValues);
 	}
+
+	// UDP supplies no application-family metadata. Require complete framing and
+	// leave ambiguous bytes Unknown rather than defaulting them to ADC.
+	if(asciiEqualNoCase(displayedProtocol, "UDP")) {
+		switch(detectDatagramFamily(raw)) {
+		case DatagramFamily::Adc:
+			return analyzeAdc(raw, options.redactSensitiveValues);
+		case DatagramFamily::Nmdc:
+			return analyzeNmdc(raw, options.redactSensitiveValues);
+		case DatagramFamily::Unknown:
+		default:
+			return analyzeUnknownDatagram(raw, options.redactSensitiveValues);
+		}
+	}
+
 	return analyzeOpaque(displayedProtocol.empty() ? "Unknown" : displayedProtocol,
 		raw, options.redactSensitiveValues);
 }
 
 namespace {
 
+/*
+ * Construct metadata for a correlated opaque transfer without ever accepting
+ * the payload body. This keeps arbitrary binary bytes away from text widgets.
+ */
 Result makeBinaryPayloadResult(const std::string& displayedProtocol,
 	const std::string& transferType, bool observedSizeKnown,
 	std::size_t observedBytes, std::size_t expectedBytes)

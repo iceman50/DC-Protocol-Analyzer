@@ -101,16 +101,33 @@ public:
 	void create();
 	void write(bool sending, ProtocolType proto, string ip, decltype(ConnectionData().port) port, string peer, string message);
 	void close();
-	void loadCaptureQueueCapacity();
+	void loadCaptureQueueLimits();
 	void setCaptureQueueCapacity(size_t capacity);
+	void setCaptureQueueMemoryLimitMiB(int32_t limit);
 
 	static constexpr size_t DEFAULT_CAPTURE_QUEUE_CAPACITY = 1024;
 	static constexpr size_t MIN_CAPTURE_QUEUE_CAPACITY = 64;
 	static constexpr size_t MAX_CAPTURE_QUEUE_CAPACITY = 65536;
 	static size_t normalizeCaptureQueueCapacity(int64_t capacity) noexcept;
+	/* Bounds callback-thread storage while captured messages await the UI. */
+	static constexpr int32_t DEFAULT_CAPTURE_QUEUE_MEMORY_MIB = 4;
+	static constexpr int32_t MIN_CAPTURE_QUEUE_MEMORY_MIB = 1;
+	static constexpr int32_t MAX_CAPTURE_QUEUE_MEMORY_MIB = 64;
+	static int32_t normalizeCaptureQueueMemoryLimitMiB(int64_t limit) noexcept;
+	static int32_t getCaptureQueueMemoryLimitMiB();
+	/*
+	 * Four MiB keeps the default interactive copy inexpensive; the bounded
+	 * preference permits larger diagnostics without removing the safeguard.
+	 */
+	static constexpr int32_t DEFAULT_CLIPBOARD_LIMIT_MIB = 4;
+	static constexpr int32_t MIN_CLIPBOARD_LIMIT_MIB = 1;
+	static constexpr int32_t MAX_CLIPBOARD_LIMIT_MIB = 64;
+	static int32_t normalizeClipboardLimitMiB(int64_t limit) noexcept;
+	static int32_t getClipboardLimitMiB();
+	static void setClipboardLimitMiB(int32_t limit);
 	
 	static void redrawTable();
-	static void refreshTableColors();
+	static void refreshPalette();
 
 	void initSettings();
 	void saveState();
@@ -141,6 +158,7 @@ private:
 	void toggleTheme();
 	COLORREF getTableBackground() const;
 	void copy();
+	void copyColumn(int column);
 	void clear();
 	void remove();
 	void openSettings();
@@ -183,17 +201,16 @@ private:
 		bool requestCorrelated;
 		std::chrono::steady_clock::time_point expires;
 	};
-	static constexpr size_t MESSAGE_QUEUE_BYTE_CAPACITY = 4 * 1024 * 1024;
 	static constexpr size_t HISTORY_ITEM_CAPACITY = 20000;
 	static constexpr size_t HISTORY_BYTE_CAPACITY = 64 * 1024 * 1024;
 	static constexpr size_t MAX_MESSAGE_BYTES = 64 * 1024;
 	static constexpr size_t MAX_PEER_BYTES = 4096;
 	static constexpr size_t MAX_ADDRESS_BYTES = 512;
-	static constexpr size_t MAX_COPY_CHARS = 4 * 1024 * 1024;
 	std::deque<std::unique_ptr<Message>> messages;
 	std::deque<BloomRequest> bloomRequests;
 	std::deque<BloomPayload> bloomPayloads;
 	size_t messageQueueCapacity;
+	size_t messageQueueByteCapacity;
 	size_t messagesBytes;
 	uint64_t captureGeneration;
 	uint64_t pendingDroppedMessages;

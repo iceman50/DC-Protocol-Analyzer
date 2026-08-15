@@ -24,7 +24,7 @@
 #include <dwt/widgets/ModalDialog.h>
 
 #include "GUI.h"
-#include "TableColors.h"
+#include "Palette.h"
 
 namespace protocol_analyzer::ui {
 class CustomTitleBar;
@@ -50,6 +50,8 @@ private:
 	void resetPaletteColor();
 	void resetPalette();
 	bool applyCaptureQueueCapacity();
+	bool applyCaptureQueueMemoryLimit();
+	bool applyClipboardLimit();
 
 	GUI& owner;
 	std::unique_ptr<protocol_analyzer::ui::CustomTitleBar> customTitleBar;
@@ -59,9 +61,11 @@ private:
 	dwt::ButtonPtr paletteColor;
 	dwt::LabelPtr paletteHint;
 	dwt::TextBoxPtr captureQueueBox;
-	dwt::LabelPtr captureQueueHint;
+	dwt::TextBoxPtr captureQueueMemoryBox;
+	dwt::TextBoxPtr clipboardLimitBox;
+	dwt::LabelPtr resourceLimitHint;
 	bool editingDarkPalette;
-	TableColors::Role selectedColorRole;
+	protocol_analyzer::ui::Palette::Role selectedColorRole;
 
 	string log;
 	string timestamp;

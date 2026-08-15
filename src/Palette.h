@@ -16,8 +16,8 @@
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-#ifndef PROTOCOL_ANALYZER_TABLE_COLORS_H
-#define PROTOCOL_ANALYZER_TABLE_COLORS_H
+#ifndef PROTOCOL_ANALYZER_PALETTE_H
+#define PROTOCOL_ANALYZER_PALETTE_H
 
 #include "UIStyles.h"
 
@@ -27,7 +27,12 @@
 #include <cstddef>
 #include <string>
 
-namespace TableColors {
+/*
+ * User-configurable display colors shared by the capture list and decoded
+ * inspector. ThemePalette in UIStyles.h supplies the fixed window chrome;
+ * this namespace owns semantic protocol/validation roles and persistence.
+ */
+namespace protocol_analyzer::ui::Palette {
 
 enum class Role {
 	Background,
@@ -110,7 +115,18 @@ inline const RoleInfo& info(Role role) {
 }
 
 inline std::string configKey(Role role, bool dark) {
-	return std::string(dark ? "TableDark" : "TableLight") + info(role).keySuffix;
+	return std::string(dark ? "PaletteDark" : "PaletteLight") +
+		info(role).keySuffix;
+}
+
+/*
+ * Releases before the palette covered the inspector stored the same roles
+ * under table-specific keys. Keep these names only as a read-only migration
+ * source so user-selected colors survive the terminology change.
+ */
+inline std::string legacyConfigKey(Role role, bool dark) {
+	return std::string(dark ? "TableDark" : "TableLight") +
+		info(role).keySuffix;
 }
 
 constexpr uint32_t STORED_COLOR_MARKER = 0x01000000U;
@@ -284,18 +300,26 @@ inline void initialize() {
 	value.initialized = true;
 
 	constexpr int PALETTE_VERSION = 3;
-	const auto oldVersion = dcapi::Config::getIntConfig("TablePaletteVersion");
-	if(oldVersion < 1) {
+	const auto currentVersion =
+		dcapi::Config::getIntConfig("PaletteVersion");
+	const auto legacyVersion =
+		dcapi::Config::getIntConfig("TablePaletteVersion");
+	const bool migrateLegacy = currentVersion < 1 && legacyVersion >= 1;
+	const auto storedVersion = migrateLegacy ? legacyVersion : currentVersion;
+	if(storedVersion < 1) {
 		reset(false);
 		reset(true);
 	} else {
 		for(const auto& role : roles()) {
 			for(bool dark : { false, true }) {
 				const auto key = configKey(role.role, dark);
-				const auto raw = dcapi::Config::getIntConfig(key.c_str());
+				const auto sourceKey = migrateLegacy ?
+					legacyConfigKey(role.role, dark) : key;
+				const auto raw =
+					dcapi::Config::getIntConfig(sourceKey.c_str());
 				COLORREF color = defaultColor(role.role, dark);
 				bool valid = false;
-				if(oldVersion >= PALETTE_VERSION) {
+				if(storedVersion >= PALETTE_VERSION) {
 					valid = decodeStoredColor(raw, color);
 				} else {
 					// Versions 1 and 2 stored an unmarked 24-bit COLORREF.
@@ -317,14 +341,14 @@ inline void initialize() {
 				} else {
 					value.light[index] = color;
 				}
-				if(!valid || oldVersion < PALETTE_VERSION) {
+				if(migrateLegacy || !valid || storedVersion < PALETTE_VERSION) {
 					dcapi::Config::setConfig(
 						key.c_str(), encodeStoredColor(color));
 				}
 			}
 		}
 	}
-	dcapi::Config::setConfig("TablePaletteVersion", PALETTE_VERSION);
+	dcapi::Config::setConfig("PaletteVersion", PALETTE_VERSION);
 
 	// These settings belonged to the old protocol-only color model.
 	dcapi::Config::removeConfig("BgColor");
@@ -335,6 +359,6 @@ inline void initialize() {
 	dcapi::Config::removeConfig("DarkThemeInitialized");
 }
 
-} // namespace TableColors
+} // namespace protocol_analyzer::ui::Palette
 
 #endif

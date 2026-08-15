@@ -279,19 +279,27 @@ Important hard limits include:
 | Parser warnings | 16 |
 | Summary | 512 bytes |
 | Inspector output | 32 KiB |
-| Capture queue | 64–65,536 messages (default 1,024) / fixed 4 MiB |
+| Capture queue | 64–65,536 messages (default 1,024) / 1–64 MiB (default 4 MiB) |
 | Retained history | 20,000 messages / 64 MiB |
-| Clipboard output | 4 MiB |
+| Clipboard output | 1–64 MiB (default 4 MiB) |
 | Regex pattern | 256 characters |
 | Log file before rotation | 10 MiB |
 | Active `/fetch` requests | 16 |
 
-The message-count queue limit is set in **Preferences → Capture queue** and is
-clamped to its supported range. The independent 4 MiB ceiling cannot be
-disabled. Reducing the limit discards only excess unprocessed messages and
-accounts for them as dropped traffic. When a queue or history limit is
-reached, traffic is dropped or the oldest history is evicted in a controlled
-manner and the UI reports the condition.
+The message-count and queue-memory limits are set independently in
+**Preferences → Resource limits**. The byte ceiling protects callback-thread
+memory while captures wait for the UI timer; it is not a protocol or Windows
+limit. Reducing either queue limit discards newest excess pending messages and
+accounts for them as dropped traffic. When a queue or history limit is reached,
+traffic is dropped or the oldest history is evicted in a controlled manner and
+the UI reports the condition.
+
+The clipboard ceiling is set in **Preferences → Resource limits**. The
+4 MiB default is an application responsiveness safeguard, not a Windows
+Clipboard restriction: copying builds a temporary string and then allocates a
+second UTF-16 block for Windows to own. Raising the limit permits larger
+whole-row and per-column copies but can make the UI pause longer while that
+text is assembled and transferred.
 
 ## Chat commands
 

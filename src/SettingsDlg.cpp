@@ -35,6 +35,8 @@
 #include <dwt/widgets/SaveDialog.h>
 #include <dwt/widgets/TextBox.h>
 
+#include <limits>
+
 // dwt defines another tstring...
 typedef tstring _tstring;
 #define tstring _tstring
@@ -43,6 +45,31 @@ using dcapi::Config;
 using dcapi::Util;
 
 using namespace dwt;
+
+namespace Palette = protocol_analyzer::ui::Palette;
+
+namespace {
+
+bool parseUnsignedText(const tstring& input, uint64_t& parsed) noexcept {
+	if(input.empty()) {
+		return false;
+	}
+	uint64_t result = 0;
+	for(const auto ch : input) {
+		if(ch < _T('0') || ch > _T('9')) {
+			return false;
+		}
+		const auto digit = static_cast<uint64_t>(ch - _T('0'));
+		if(result > ((std::numeric_limits<uint64_t>::max)() - digit) / 10) {
+			return false;
+		}
+		result = result * 10 + digit;
+	}
+	parsed = result;
+	return true;
+}
+
+}
 
 SettingsDlg::SettingsDlg(dwt::Widget* parent, GUI& owner_) :
 	BaseType(parent),
@@ -54,9 +81,11 @@ SettingsDlg::SettingsDlg(dwt::Widget* parent, GUI& owner_) :
 	paletteColor(nullptr),
 	paletteHint(nullptr),
 	captureQueueBox(nullptr),
-	captureQueueHint(nullptr),
+	captureQueueMemoryBox(nullptr),
+	clipboardLimitBox(nullptr),
+	resourceLimitHint(nullptr),
 	editingDarkPalette(protocol_analyzer::ui::isDarkMode()),
-	selectedColorRole(TableColors::Role::Background)
+	selectedColorRole(Palette::Role::Background)
 {
 	onInitDialog([this] { return handleInitDialog(); });
 }
@@ -65,7 +94,7 @@ SettingsDlg::~SettingsDlg() {
 }
 
 int SettingsDlg::run() {
-	create(Seed(dwt::Point(760, 700)));
+	create(Seed(dwt::Point(760, 760)));
 	return show();
 }
 
@@ -99,7 +128,7 @@ bool SettingsDlg::handleInitDialog() {
 		title->setColor(protocol_analyzer::ui::palette().text, protocol_analyzer::ui::palette().window);
 
 		Label::Seed subtitleSeed(
-			_T("Tune capture capacity, appearance, timestamps, redaction, and optional file logging."));
+			_T("Tune capture capacity, clipboard safety, appearance, timestamps, redaction, and logging."));
 		subtitleSeed.font = uiFont;
 		auto subtitle = header->addChild(subtitleSeed);
 		subtitle->setFont(uiFont);
@@ -146,7 +175,7 @@ bool SettingsDlg::handleInitDialog() {
 		roleSeed.font = uiFont;
 		paletteRole = content->addChild(roleSeed);
 		paletteRole->setAccessibleName(_T("Display element color"));
-		for(const auto& role : TableColors::roles()) {
+		for(const auto& role : Palette::roles()) {
 			paletteRole->addValue(role.label);
 		}
 		paletteRole->setSelected(static_cast<int>(selectedColorRole));
@@ -167,7 +196,7 @@ bool SettingsDlg::handleInitDialog() {
 		paletteColor->setAccessibleName(_T("Change selected display color"));
 		paletteColor->onClicked([this] { choosePaletteColor(); });
 		protocol_analyzer::ui::styleColorButton(paletteColor, [this] {
-			return TableColors::get(selectedColorRole, editingDarkPalette);
+			return Palette::get(selectedColorRole, editingDarkPalette);
 		});
 
 		Button::Seed resetColorSeed(_T("Reset color"));
@@ -199,8 +228,8 @@ bool SettingsDlg::handleInitDialog() {
 		});
 		paletteRole->onSelectionChanged([this] {
 			const int selected = paletteRole->getSelected();
-			if(selected >= 0 && selected < static_cast<int>(TableColors::Role::Count)) {
-				selectedColorRole = static_cast<TableColors::Role>(selected);
+			if(selected >= 0 && selected < static_cast<int>(Palette::Role::Count)) {
+				selectedColorRole = static_cast<Palette::Role>(selected);
 				refreshPaletteEditor();
 			}
 		});
@@ -263,11 +292,11 @@ bool SettingsDlg::handleInitDialog() {
 	}
 
 	{
-		GroupBox::Seed queueSeed(_T("Capture queue"));
+		GroupBox::Seed queueSeed(_T("Resource limits"));
 		queueSeed.font = sectionFont;
 		auto queueGroup = grid->addChild(queueSeed);
 		protocol_analyzer::ui::styleGroupBox(queueGroup);
-		auto content = queueGroup->addChild(Grid::Seed(2, 3));
+		auto content = queueGroup->addChild(Grid::Seed(4, 3));
 		content->column(0).size = 112;
 		content->column(1).mode = GridInfo::FILL;
 		content->column(2).mode = GridInfo::AUTO;
@@ -277,6 +306,7 @@ bool SettingsDlg::handleInitDialog() {
 		Label::Seed capacityLabelSeed(_T("Pending messages"));
 		capacityLabelSeed.font = uiFont;
 		auto capacityLabel = content->addChild(capacityLabelSeed);
+		content->setWidget(capacityLabel, 0, 0);
 		capacityLabel->setFont(uiFont);
 		capacityLabel->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
 
@@ -286,6 +316,7 @@ bool SettingsDlg::handleInitDialog() {
 		capacitySeed.style |= ES_AUTOHSCROLL | ES_NUMBER;
 		capacitySeed.font = uiFont;
 		captureQueueBox = content->addChild(capacitySeed);
+		content->setWidget(captureQueueBox, 0, 1);
 		captureQueueBox->setTextLimit(10);
 		captureQueueBox->setCue(_T("64 to 65536"));
 		captureQueueBox->setAccessibleName(_T("Capture queue message capacity"));
@@ -295,17 +326,83 @@ bool SettingsDlg::handleInitDialog() {
 		applySeed.font = uiFont;
 		applySeed.padding = Point(14, 5);
 		auto applyButton = content->addChild(applySeed);
+		content->setWidget(applyButton, 0, 2);
 		applyButton->onClicked([this] { applyCaptureQueueCapacity(); });
 		protocol_analyzer::ui::styleButton(applyButton);
 
-		Label::Seed hintSeed(
-			_T("Allowed range: 64\u201365,536 messages. The independent 4 MiB ")
-			_T("memory ceiling always remains active."));
-		hintSeed.font = uiFont;
-		captureQueueHint = content->addChild(hintSeed);
-		content->setWidget(captureQueueHint, 1, 1, 1, 2);
-		captureQueueHint->setFont(uiFont);
-		captureQueueHint->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
+		Label::Seed queueMemoryLabelSeed(_T("Queue memory (MiB)"));
+		queueMemoryLabelSeed.font = uiFont;
+		auto queueMemoryLabel = content->addChild(queueMemoryLabelSeed);
+		content->setWidget(queueMemoryLabel, 1, 0);
+		queueMemoryLabel->setFont(uiFont);
+		queueMemoryLabel->setColor(protocol_analyzer::ui::palette().muted,
+			protocol_analyzer::ui::palette().window);
+
+		const auto queueMemoryLimit = GUI::getCaptureQueueMemoryLimitMiB();
+		TextBox::Seed queueMemorySeed(
+			Util::toT(std::to_string(queueMemoryLimit)));
+		queueMemorySeed.style |= ES_AUTOHSCROLL | ES_NUMBER;
+		queueMemorySeed.font = uiFont;
+		captureQueueMemoryBox = content->addChild(queueMemorySeed);
+		content->setWidget(captureQueueMemoryBox, 1, 1);
+		captureQueueMemoryBox->setTextLimit(10);
+		captureQueueMemoryBox->setCue(_T("1 to 64"));
+		captureQueueMemoryBox->setAccessibleName(
+			_T("Pending capture queue memory limit in MiB"));
+		captureQueueMemoryBox->setAccessibleHelpText(
+			_T("Bounds messages waiting for processing by the UI timer."));
+		captureQueueMemoryBox->setColor(protocol_analyzer::ui::palette().text,
+			protocol_analyzer::ui::palette().panel);
+
+		Button::Seed applyQueueMemorySeed(_T("Apply"));
+		applyQueueMemorySeed.font = uiFont;
+		applyQueueMemorySeed.padding = Point(14, 5);
+		auto applyQueueMemoryButton = content->addChild(applyQueueMemorySeed);
+		content->setWidget(applyQueueMemoryButton, 1, 2);
+		applyQueueMemoryButton->onClicked(
+			[this] { applyCaptureQueueMemoryLimit(); });
+		protocol_analyzer::ui::styleButton(applyQueueMemoryButton);
+
+		Label::Seed clipboardLabelSeed(_T("Clipboard (MiB)"));
+		clipboardLabelSeed.font = uiFont;
+		auto clipboardLabel = content->addChild(clipboardLabelSeed);
+		content->setWidget(clipboardLabel, 2, 0);
+		clipboardLabel->setFont(uiFont);
+		clipboardLabel->setColor(protocol_analyzer::ui::palette().muted,
+			protocol_analyzer::ui::palette().window);
+
+		const auto clipboardLimit = GUI::getClipboardLimitMiB();
+		TextBox::Seed clipboardSeed(
+			Util::toT(std::to_string(clipboardLimit)));
+		clipboardSeed.style |= ES_AUTOHSCROLL | ES_NUMBER;
+		clipboardSeed.font = uiFont;
+		clipboardLimitBox = content->addChild(clipboardSeed);
+		content->setWidget(clipboardLimitBox, 2, 1);
+		clipboardLimitBox->setTextLimit(10);
+		clipboardLimitBox->setCue(_T("1 to 64"));
+		clipboardLimitBox->setAccessibleName(
+			_T("Clipboard output safety limit in MiB"));
+		clipboardLimitBox->setAccessibleHelpText(
+			_T("Limits temporary text assembly and the Windows clipboard allocation."));
+		clipboardLimitBox->setColor(protocol_analyzer::ui::palette().text,
+			protocol_analyzer::ui::palette().panel);
+
+		Button::Seed applyClipboardSeed(_T("Apply"));
+		applyClipboardSeed.font = uiFont;
+		applyClipboardSeed.padding = Point(14, 5);
+		auto applyClipboardButton = content->addChild(applyClipboardSeed);
+		content->setWidget(applyClipboardButton, 2, 2);
+		applyClipboardButton->onClicked([this] { applyClipboardLimit(); });
+		protocol_analyzer::ui::styleButton(applyClipboardButton);
+
+		Label::Seed resourceHintSeed(
+			_T("Messages: 64\u201365,536. Memory limits: 1\u201364 MiB; defaults are 4 MiB."));
+		resourceHintSeed.font = uiFont;
+		resourceLimitHint = content->addChild(resourceHintSeed);
+		content->setWidget(resourceLimitHint, 3, 0, 1, 3);
+		resourceLimitHint->setFont(uiFont);
+		resourceLimitHint->setColor(protocol_analyzer::ui::palette().muted,
+			protocol_analyzer::ui::palette().window);
 	}
 
 	{
@@ -397,45 +494,103 @@ bool SettingsDlg::handleInitDialog() {
 }
 
 void SettingsDlg::ok() {
-	if(applyCaptureQueueCapacity()) {
-		endDialog(IDOK);
+	if(!applyCaptureQueueCapacity()) {
+		return;
 	}
+	if(!applyCaptureQueueMemoryLimit()) {
+		return;
+	}
+	if(!applyClipboardLimit()) {
+		return;
+	}
+	endDialog(IDOK);
 }
 
 bool SettingsDlg::applyCaptureQueueCapacity() {
-	if(!captureQueueBox || !captureQueueHint) {
+	if(!captureQueueBox || !resourceLimitHint) {
 		return false;
 	}
 
-	const auto input = captureQueueBox->getText();
 	uint64_t parsed = 0;
-	bool valid = !input.empty();
-	for(const auto ch : input) {
-		if(ch < _T('0') || ch > _T('9')) {
-			valid = false;
-			break;
-		}
-		parsed = parsed * 10 + static_cast<uint64_t>(ch - _T('0'));
-	}
-	if(!valid) {
-		captureQueueHint->setText(_T("Enter a whole number from 64 to 65,536."));
-		captureQueueHint->setColor(protocol_analyzer::ui::palette().danger, protocol_analyzer::ui::palette().window);
+	if(!parseUnsignedText(captureQueueBox->getText(), parsed)) {
+		resourceLimitHint->setText(_T("Enter a whole number from 64 to 65,536 messages."));
+		resourceLimitHint->setColor(protocol_analyzer::ui::palette().danger, protocol_analyzer::ui::palette().window);
 		captureQueueBox->setFocus();
 		return false;
 	}
 
-	const auto normalized =
+	const auto normalized = parsed > GUI::MAX_CAPTURE_QUEUE_CAPACITY ?
+		GUI::MAX_CAPTURE_QUEUE_CAPACITY :
 		GUI::normalizeCaptureQueueCapacity(static_cast<int64_t>(parsed));
 	owner.setCaptureQueueCapacity(normalized);
 	captureQueueBox->setText(Util::toT(std::to_string(normalized)));
 	if(parsed != normalized) {
-		captureQueueHint->setText(
-			_T("Value adjusted to the supported range. The 4 MiB memory ceiling remains active."));
+		resourceLimitHint->setText(
+			_T("Message capacity adjusted to the supported range."));
 	} else {
-		captureQueueHint->setText(
-			_T("Applied immediately. The independent 4 MiB memory ceiling remains active."));
+		resourceLimitHint->setText(
+			_T("Message capacity applied immediately."));
 	}
-	captureQueueHint->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
+	resourceLimitHint->setColor(protocol_analyzer::ui::palette().muted, protocol_analyzer::ui::palette().window);
+	return true;
+}
+
+bool SettingsDlg::applyCaptureQueueMemoryLimit() {
+	if(!captureQueueMemoryBox || !resourceLimitHint) {
+		return false;
+	}
+
+	uint64_t parsed = 0;
+	if(!parseUnsignedText(captureQueueMemoryBox->getText(), parsed)) {
+		resourceLimitHint->setText(
+			_T("Enter a whole-number queue memory limit from 1 to 64 MiB."));
+		resourceLimitHint->setColor(protocol_analyzer::ui::palette().danger,
+			protocol_analyzer::ui::palette().window);
+		captureQueueMemoryBox->setFocus();
+		return false;
+	}
+
+	const auto normalized = parsed >
+		static_cast<uint64_t>(GUI::MAX_CAPTURE_QUEUE_MEMORY_MIB) ?
+		GUI::MAX_CAPTURE_QUEUE_MEMORY_MIB :
+		GUI::normalizeCaptureQueueMemoryLimitMiB(
+			static_cast<int64_t>(parsed));
+	owner.setCaptureQueueMemoryLimitMiB(normalized);
+	captureQueueMemoryBox->setText(Util::toT(std::to_string(normalized)));
+	resourceLimitHint->setText(parsed == static_cast<uint64_t>(normalized) ?
+		_T("Queue memory limit applied immediately.") :
+		_T("Queue memory limit adjusted to the supported 1\u201364 MiB range."));
+	resourceLimitHint->setColor(protocol_analyzer::ui::palette().muted,
+		protocol_analyzer::ui::palette().window);
+	return true;
+}
+
+bool SettingsDlg::applyClipboardLimit() {
+	if(!clipboardLimitBox || !resourceLimitHint) {
+		return false;
+	}
+
+	uint64_t parsed = 0;
+	if(!parseUnsignedText(clipboardLimitBox->getText(), parsed)) {
+		resourceLimitHint->setText(
+			_T("Enter a whole number from 1 to 64 MiB."));
+		resourceLimitHint->setColor(protocol_analyzer::ui::palette().danger,
+			protocol_analyzer::ui::palette().window);
+		clipboardLimitBox->setFocus();
+		return false;
+	}
+
+	const auto normalized = parsed >
+		static_cast<uint64_t>(GUI::MAX_CLIPBOARD_LIMIT_MIB) ?
+		GUI::MAX_CLIPBOARD_LIMIT_MIB :
+		GUI::normalizeClipboardLimitMiB(static_cast<int64_t>(parsed));
+	GUI::setClipboardLimitMiB(normalized);
+	clipboardLimitBox->setText(Util::toT(std::to_string(normalized)));
+	resourceLimitHint->setText(parsed == static_cast<uint64_t>(normalized) ?
+		_T("Applied immediately to whole-row and per-column copies.") :
+		_T("Value adjusted to the supported 1\u201364 MiB range."));
+	resourceLimitHint->setColor(protocol_analyzer::ui::palette().muted,
+		protocol_analyzer::ui::palette().window);
 	return true;
 }
 
@@ -454,7 +609,7 @@ void SettingsDlg::refreshPaletteEditor() {
 		return;
 	}
 
-	const auto color = TableColors::get(selectedColorRole, editingDarkPalette);
+	const auto color = Palette::get(selectedColorRole, editingDarkPalette);
 	TCHAR caption[64] {};
 	_stprintf_s(caption, sizeof(caption) / sizeof(caption[0]),
 		_T("#%02X%02X%02X  Change color\u2026"),
@@ -472,29 +627,29 @@ void SettingsDlg::refreshPaletteEditor() {
 
 void SettingsDlg::choosePaletteColor() {
 	ColorDialog::ColorParams params(
-		TableColors::get(selectedColorRole, editingDarkPalette));
+		Palette::get(selectedColorRole, editingDarkPalette));
 	if(ColorDialog(this).open(params)) {
-		TableColors::set(selectedColorRole, editingDarkPalette, params.getColor());
+		Palette::set(selectedColorRole, editingDarkPalette, params.getColor());
 		if(editingDarkPalette == protocol_analyzer::ui::isDarkMode()) {
-			GUI::refreshTableColors();
+			GUI::refreshPalette();
 		}
 		refreshPaletteEditor();
 	}
 }
 
 void SettingsDlg::resetPaletteColor() {
-	TableColors::set(selectedColorRole, editingDarkPalette,
-		TableColors::defaultColor(selectedColorRole, editingDarkPalette));
+	Palette::set(selectedColorRole, editingDarkPalette,
+		Palette::defaultColor(selectedColorRole, editingDarkPalette));
 	if(editingDarkPalette == protocol_analyzer::ui::isDarkMode()) {
-		GUI::refreshTableColors();
+		GUI::refreshPalette();
 	}
 	refreshPaletteEditor();
 }
 
 void SettingsDlg::resetPalette() {
-	TableColors::reset(editingDarkPalette);
+	Palette::reset(editingDarkPalette);
 	if(editingDarkPalette == protocol_analyzer::ui::isDarkMode()) {
-		GUI::refreshTableColors();
+		GUI::refreshPalette();
 	}
 	refreshPaletteEditor();
 }
