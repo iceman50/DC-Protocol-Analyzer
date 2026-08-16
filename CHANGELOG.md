@@ -7,7 +7,7 @@ The project uses a two-component public version, beginning with 1.00 after the
 Protocol Analyzer rebrand. Earlier DevPlugin releases are retained below as
 legacy history.
 
-## [Unreleased]
+## [1.01] - 2026-08-16
 
 ### Added
 

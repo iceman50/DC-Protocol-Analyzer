@@ -7,7 +7,7 @@ altering network traffic.
 
 - Plugin: **Protocol Analyzer**
 - Binary: `ProtocolAnalyzer.dll`
-- Version: **1.02**
+- Version: **1.01**
 - Author and project copyright: **iceman50**
 - License: **GNU GPL version 2 or later**
 - Platform: **Windows x86-64**

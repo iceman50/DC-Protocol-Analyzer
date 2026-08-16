@@ -34,9 +34,9 @@
 #define PLUGIN_DESC "Analyze ADC/NMDC protocol commands"
 
 /* Version of the plugin (note: not API version) */
-#define PLUGIN_VERSION 1.00
+#define PLUGIN_VERSION 1.01
 /* String representation of the plugin version */
-#define PLUGIN_VERSION_STR "1.00"
+#define PLUGIN_VERSION_STR "1.01"
 
 /* Plugin website, set to "N/A" if none */
 #define PLUGIN_WEB "https://github.com/iceman50/DC-Protocol-Analyzer"
