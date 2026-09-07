@@ -15,6 +15,10 @@ legacy history.
   descriptors and permission masks, subscriptions and direct entry requests,
   index entries and tombstones, post submission and withdrawal, canonical
   `IBB0` post-document headers and bodies, and BBS0 refusal status codes.
+- Added a bounded `protocol-definitions.xml` runtime catalog for all current ADC
+  and NMDC commands and features, generic ADC fields, descriptions, XML-only
+  command discovery, locale/base-language translation fallback, and optional
+  ADC routing constraints. Invalid catalogs fall back to compiled definitions.
 
 ### Fixed
 

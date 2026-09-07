@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Runtime protocol catalog for Protocol Analyzer.
+
+  To translate an item without changing its stable wire code, turn the
+  self-closing element into a pair and add, for example:
+
+    <translation language="de" name="Status"
+                 category="Status"
+                 description="Eine ADC-Statusantwort." />
+
+  The loader tries the user's full locale, its base language, the catalog's
+  default language, and finally the text on the command/feature/field itself.
+  New valid ADC or NMDC command entries are recognized immediately and decoded
+  generically. Complex command semantics remain in the bounded C++ parsers.
+-->
+<protocol-definitions version="1" default-language="en">
+  <protocol id="ADC">
+    <command code="KEEPALIVE" name="Keep-alive" category="Control" description="An empty ADC command that keeps the connection active." />
+    <command code="STA" name="Status" category="Status" description="Reports success, warning, or failure status." />
+    <command code="SUP" name="Supported features" category="Handshake" description="Advertises supported ADC protocol features." />
+    <command code="SID" name="Session ID assignment" category="Handshake" description="Assigns the client its hub-local session identifier." />
+    <command code="INF" name="Entity information" category="Identity" description="Publishes hub, user, or client identity information." />
+    <command code="MSG" name="Chat message" category="Chat" description="Carries a public, private, or direct chat message." />
+    <command code="SCH" name="Search request" category="Search" description="Requests matching files or directories." />
+    <command code="RES" name="Search result" category="Search" description="Returns one result for an ADC search." />
+    <command code="CTM" name="Connect request" category="Connection" description="Requests a direct client connection." />
+    <command code="RCM" name="Reverse connect request" category="Connection" description="Requests that the peer initiate a direct connection." />
+    <command code="GPA" name="Password challenge" category="Authentication" description="Sends password challenge data." />
+    <command code="PAS" name="Password response" category="Authentication" description="Sends a password challenge response." />
+    <command code="QUI" name="Disconnect notification" category="Status" description="Reports that a session disconnected or should disconnect." />
+    <command code="GET" name="Transfer request" category="Transfer" description="Requests file, list, tree, or extension transfer data." />
+    <command code="GFI" name="File information request" category="Transfer" description="Requests information about a transferable object." />
+    <command code="SND" name="Transfer response" category="Transfer" description="Announces the data that follows a transfer request." />
+    <command code="CMD" name="User command" category="Hub" description="Defines, changes, or removes a hub-provided user command." />
+    <command code="OID" name="Identity service notification" category="Extension" description="Publishes an online-service identity." />
+    <command code="OIR" name="Identity service request or response" category="Extension" description="Requests or returns an online-service identity." />
+    <command code="GFA" name="Distributed-favorites request" category="Extension" description="Requests distributed-favorites information." />
+    <command code="RFA" name="Distributed-favorites response" category="Extension" description="Returns distributed-favorites information." />
+    <command code="NAT" name="NAT traversal request" category="Connection" description="Starts extension-assisted NAT traversal." />
+    <command code="RNT" name="NAT traversal response" category="Connection" description="Responds to an extension-assisted NAT traversal request." />
+    <command code="ZON" name="Compressed stream activation" category="Compression" description="Activates compressed ADC command transport." />
+    <command code="ZOF" name="Compressed stream deactivation" category="Compression" description="Deactivates compressed ADC command transport." />
+    <command code="TPN" name="Typing-state notification" category="Chat" description="Reports a private-message typing state." />
+    <command code="RSS" name="Feed notification" category="Extension" description="Publishes or removes an RSS feed." />
+    <command code="PSR" name="Partial-file availability" category="Transfer" description="Reports partial-file availability." />
+    <command code="TCP" name="Hybrid IP reachability validation" category="Connection" description="Validates hybrid IPv4 and IPv6 reachability." />
+    <command code="PMI" name="Private-message state information" category="Chat" description="Reports private-message conversation state." />
+    <command code="PBD" name="Partial-bundle information" category="Transfer" description="Reports partial bundle progress and state." />
+    <command code="UBD" name="Upload-bundle definition" category="Transfer" description="Defines or changes an upload bundle." />
+    <command code="UBN" name="Upload-bundle notification" category="Transfer" description="Reports upload-bundle activity." />
+    <command code="BBD" name="Bulletin-board descriptor" category="Bulletin board" description="Describes a BBS0 board and session permissions." />
+    <command code="BBL" name="Bulletin-board index" category="Bulletin board" description="Subscribes to or returns a BBS0 board index." />
+    <command code="BBP" name="Bulletin-board post operation" category="Bulletin board" description="Submits, requests, or withdraws a BBS0 post." />
+    <command code="BB0" name="Bulletin-board post document" category="Bulletin board" description="Carries a canonical BBS0 post document." />
+
+    <feature code="BASE" name="ADC base protocol" description="The current ADC base protocol." />
+    <feature code="BAS0" name="Legacy ADC/0.10 base protocol" description="The legacy ADC 0.10 base protocol." />
+    <feature code="TIGR" name="Tiger tree hashes" description="Tiger Tree Hash support." />
+    <feature code="BZIP" name="Bzip2 file lists" description="Bzip2-compressed file-list support." />
+    <feature code="ZLIF" name="Full-stream zlib compression" description="Full ADC stream zlib compression." />
+    <feature code="ZLIG" name="Compressed transfer data" description="Zlib-compressed transfer payloads." />
+    <feature code="PING" name="Hub pinger information" description="Hub pinger metadata." />
+    <feature code="DFAV" name="Distributed favorites" description="Distributed favorite-hub information." />
+    <feature code="UCMD" name="User commands" description="Hub-provided user commands." />
+    <feature code="UCM0" name="User commands revision 0" description="Revision 0 of hub-provided user commands." />
+    <feature code="RTF0" name="Rich-text chat messages" description="Revision 0 rich-text chat formatting." />
+    <feature code="BBS0" name="Bulletin boards" description="Revision 0 bulletin-board support." />
+    <feature code="BLOM" name="Bloom-filter sharing" description="Bloom-filter sharing." />
+    <feature code="BLO0" name="Bloom-filter sharing revision 0" description="Revision 0 bloom-filter sharing." />
+    <feature code="NATT" name="NAT traversal" description="NAT traversal support." />
+    <feature code="NAT0" name="NAT traversal revision 0" description="Revision 0 NAT traversal." />
+    <feature code="PFSR" name="Partial-file sharing" description="Partial-file sharing and search results." />
+    <feature code="KEYP" name="TLS certificate keyprints" description="TLS certificate keyprint exchange." />
+    <feature code="SUDP" name="Encrypted UDP traffic" description="Encrypted ADC UDP traffic." />
+    <feature code="SUD1" name="Encrypted UDP traffic revision 1" description="Revision 1 encrypted ADC UDP traffic." />
+    <feature code="TYPE" name="Typing-state notifications" description="Private-message typing-state notifications." />
+    <feature code="FEED" name="RSS feed notifications" description="RSS feed notifications." />
+    <feature code="SEGA" name="Grouped search extensions" description="Grouped advanced-search extensions." />
+    <feature code="ADCS" name="ADC-over-TLS capability (ADCS/1.0)" description="ADC 1.0 over TLS." />
+    <feature code="ADC0" name="Legacy ADC-over-TLS capability (ADCS/0.10)" description="Legacy ADC 0.10 over TLS." />
+    <feature code="ONID" name="Online-service identities" description="Online-service identity exchange." />
+    <feature code="ASCH" name="Advanced search" description="Advanced ADC search constraints." />
+    <feature code="RDEX" name="Extended redirects" description="Extended redirect negotiation." />
+    <feature code="TCP4" name="Incoming TCP connections over IPv4" description="Incoming IPv4 TCP capability." />
+    <feature code="TCP6" name="Incoming TCP connections over IPv6" description="Incoming IPv6 TCP capability." />
+    <feature code="UDP4" name="Incoming UDP packets over IPv4" description="Incoming IPv4 UDP capability." />
+    <feature code="UDP6" name="Incoming UDP packets over IPv6" description="Incoming IPv6 UDP capability." />
+    <feature code="HBRI" name="Hybrid IPv4/IPv6 reachability validation" description="Hybrid IPv4 and IPv6 reachability validation." />
+    <feature code="MCN1" name="Multiple client connections" description="Multiple simultaneous client connections." />
+    <feature code="CPMI" name="Client private-message information" description="Client private-message state information." />
+    <feature code="CCPM" name="Client-to-client private messages" description="Direct client-to-client private messages." />
+    <feature code="UBN1" name="Upload-bundle notifications revision 1" description="Revision 1 upload-bundle notifications." />
+
+    <field code="ID" name="Client ID" description="ADC client identifier." />
+    <field code="PD" name="Private ID" description="ADC private identifier." />
+    <field code="NI" name="Name" description="Entity display name." />
+    <field code="DE" name="Description" description="Human-readable description." />
+    <field code="AP" name="Application" description="Client application name." />
+    <field code="VE" name="Version" description="Application or protocol version." />
+    <field code="EM" name="Email" description="Email address." />
+    <field code="SS" name="Share size" description="Total shared bytes." />
+    <field code="SF" name="Shared files" description="Number of shared files." />
+    <field code="SL" name="Upload slots" description="Number of upload slots." />
+    <field code="FS" name="Free slots" description="Number of free upload slots." />
+    <field code="US" name="Upload speed" description="Advertised upload speed." />
+    <field code="DS" name="Download speed" description="Advertised or current download speed." />
+    <field code="HN" name="Normal hubs" description="Normal hub count." />
+    <field code="HR" name="Registered hubs" description="Registered hub count." />
+    <field code="HO" name="Operator hubs" description="Operator hub count." />
+    <field code="CT" name="Client type" description="ADC client-type bit field." />
+    <field code="AW" name="Away" description="Away-state flag." />
+    <field code="SU" name="Supported features" description="Comma-separated supported feature codes." />
+    <field code="I4" name="IPv4 address" description="IPv4 address." />
+    <field code="I6" name="IPv6 address" description="IPv6 address." />
+    <field code="U4" name="IPv4 UDP port" description="UDP port for IPv4." />
+    <field code="U6" name="IPv6 UDP port" description="UDP port for IPv6." />
+    <field code="KP" name="Certificate keyprint" description="TLS certificate keyprint." />
+    <field code="RF" name="Referrer" description="Referring hub or entity." />
+    <field code="TO" name="Token" description="Request-correlation token." />
+    <field code="PM" name="Private-message group SID" description="Private-message group session identifier." />
+    <field code="ME" name="Third person" description="Third-person message flag." />
+    <field code="TS" name="Timestamp" description="Protocol timestamp." />
+    <field code="AN" name="Included term" description="Required search term." />
+    <field code="NO" name="Excluded term" description="Excluded search term." />
+    <field code="EX" name="Extension" description="File extension constraint." />
+    <field code="LE" name="Maximum size" description="Maximum size constraint." />
+    <field code="GE" name="Minimum size" description="Minimum size constraint." />
+    <field code="EQ" name="Exact size" description="Exact size constraint." />
+    <field code="TY" name="File type" description="Search or transfer file type." />
+    <field code="TR" name="Tiger tree hash" description="Tiger Tree Hash root." />
+    <field code="TD" name="Tree depth" description="Tiger tree depth." />
+    <field code="FN" name="Filename" description="File or directory name." />
+    <field code="SI" name="Size" description="Byte size." />
+    <field code="FI" name="File count" description="File count." />
+    <field code="FO" name="Directory count" description="Directory count or failover value, depending on command." />
+    <field code="DA" name="Modified time" description="Modification or composition timestamp." />
+    <field code="MT" name="Matching mode" description="Search matching mode." />
+    <field code="PP" name="Return parent path" description="Parent-path result flag." />
+    <field code="OT" name="Older than" description="Upper timestamp constraint." />
+    <field code="NT" name="Newer than" description="Lower timestamp constraint." />
+    <field code="MR" name="Maximum results" description="Maximum requested result count." />
+    <field code="PA" name="Search path" description="Search path or parent post, depending on command." />
+    <field code="RE" name="Reply requested" description="Reply-requested flag." />
+    <field code="FC" name="Related command" description="Related command code." />
+    <field code="RC" name="Result count" description="Result count." />
+    <field code="PR" name="Protocol" description="Connection protocol." />
+    <field code="MS" name="Message" description="Human-readable message or a command-specific limit." />
+    <field code="DI" name="Disconnect transfers" description="Disconnect-transfer flag." />
+    <field code="TL" name="Reconnect delay" description="Delay, tree-list, or transfer-list flag depending on command." />
+    <field code="HH" name="Hub address" description="Hub address." />
+    <field code="WS" name="Website" description="Website address." />
+    <field code="NE" name="Network" description="Network name." />
+    <field code="OW" name="Owner" description="Owner name." />
+    <field code="UC" name="Current users" description="Current user count." />
+    <field code="XS" name="Maximum share" description="Maximum allowed share." />
+    <field code="ML" name="Minimum slots" description="Minimum allowed slots." />
+    <field code="XL" name="Maximum slots" description="Maximum allowed slots." />
+    <field code="MU" name="Minimum user hubs" description="Minimum normal-user hub count." />
+    <field code="XR" name="Maximum registered hubs" description="Maximum registered hub count." />
+    <field code="XO" name="Maximum operator hubs" description="Maximum operator hub count." />
+    <field code="MC" name="Maximum users" description="Maximum user count." />
+    <field code="UP" name="Uptime or update flag" description="Uptime or command-specific update flag." />
+    <field code="HA" name="Hub address" description="Hub address." />
+    <field code="LG" name="Last successful login" description="Last successful login timestamp." />
+    <field code="RM" name="Remove flag" description="Removal or cancellation flag." />
+    <field code="TT" name="Command template" description="Hub user-command template." />
+    <field code="CO" name="Constrained execution" description="Constrained user-command execution flag." />
+    <field code="SP" name="Separator flag" description="User-command separator flag." />
+    <field code="BK" name="Bloom sub-hash count" description="Bloom-filter sub-hash count." />
+    <field code="BH" name="Bloom sub-hash width" description="Bloom-filter sub-hash width." />
+    <field code="KY" name="UDP encryption key" description="Sensitive UDP encryption key material." />
+    <field code="HI" name="Hub IP and port" description="Hub IP address and port." />
+    <field code="PC" name="Partial chunk count" description="Partial-file chunk count." />
+    <field code="PI" name="Partial chunk intervals" description="Partial-file chunk intervals." />
+    <field code="LC" name="Locale" description="Locale identifier." />
+    <field code="QP" name="Upload queue position" description="Upload queue position." />
+    <field code="GR" name="Extension group" description="Extension group selector." />
+    <field code="RX" name="Excluded extensions or redirect choices" description="Excluded extension groups or redirect choices." />
+    <field code="RP" name="Accepted redirect protocols" description="Accepted redirect protocols." />
+    <field code="PT" name="Permanent redirect" description="Permanent-redirect flag." />
+    <field code="CR" name="Author" description="Author or creator." />
+    <field code="TI" name="Title" description="Title." />
+    <field code="LI" name="Link" description="Link target." />
+    <field code="DT" name="Publication time" description="Publication timestamp." />
+    <field code="DB" name="Downloaded and verified bytes" description="Downloaded and verified byte count." />
+    <field code="P4" name="IPv4 TCP port" description="TCP port for IPv4." />
+    <field code="P6" name="IPv6 TCP port" description="TCP port for IPv6." />
+    <field code="BU" name="Bundle token" description="Upload-bundle token." />
+    <field code="TH" name="Tiger tree hash" description="Tiger Tree Hash value." />
+    <field code="PE" name="Progress percentage" description="Progress or BBS permission bits, depending on command." />
+    <field code="NA" name="Bundle name" description="Upload-bundle name." />
+    <field code="DL" name="Downloaded bytes" description="Downloaded byte count." />
+    <field code="CH" name="Change flag" description="Change flag." />
+    <field code="UD" name="Update flag" description="Update flag." />
+    <field code="AD" name="Add flag or search term" description="Add flag or additional search term." />
+    <field code="SN" name="Seen state" description="Message-seen state." />
+    <field code="TP" name="Typing state" description="Typing state." />
+    <field code="AC" name="Automatic-connect state" description="Automatic-connect state." />
+    <field code="QU" name="Conversation closed" description="Conversation-closed flag." />
+    <field code="AS" name="Automatic-slot speed limit" description="Automatic-slot speed threshold." />
+    <field code="AM" name="Minimum automatic upload slots" description="Minimum automatic upload-slot count." />
+    <field code="FM" name="Missing INF field" description="Required INF field that is missing." />
+    <field code="FB" name="Invalid INF field" description="INF field with an invalid value." />
+    <field code="RD" name="Redirect URL" description="Redirect target URL." />
+    <field code="ZL" name="Compressed transfer flag" description="Compressed-transfer flag." />
+    <field code="MO" name="Minimum operator hubs" description="Minimum operator hub count." />
+    <field code="XU" name="Maximum normal-user hubs" description="Maximum normal-user hub count." />
+    <field code="DM" name="Modified time" description="Modification timestamp." />
+  </protocol>
+
+  <protocol id="NMDC">
+    <command code="KEEPALIVE" name="Keep-alive" category="Control" description="An empty NMDC command that keeps the connection active." />
+    <command code="Chat" name="Public chat message" category="Chat" description="A public NMDC chat line." />
+    <command code="$To:" name="Private chat message" category="Chat" description="A private NMDC chat message." />
+    <command code="$MCTo:" name="Main-chat-style private message" category="Chat" description="A private message formatted like main chat." />
+    <command code="$ConnectToMe" name="Connect request" category="Connection" description="Requests a direct client connection." />
+    <command code="$RevConnectToMe" name="Reverse connect request" category="Connection" description="Requests that the peer initiate a connection." />
+    <command code="$Ping" name="Connection probe" category="Connection" description="Probes an NMDC connection." />
+    <command code="$GetPass" name="Password challenge" category="Authentication" description="Requests password authentication." />
+    <command code="$MyPass" name="Password response" category="Authentication" description="Sends password authentication material." />
+    <command code="$LogedIn" name="Successful login" category="Authentication" description="Reports successful operator login." />
+    <command code="$Get" name="Legacy transfer request" category="Transfer" description="Requests a legacy NMDC transfer." />
+    <command code="$Send" name="Legacy transfer response" category="Transfer" description="Begins a legacy NMDC transfer." />
+    <command code="$FileLength" name="File length" category="Transfer" description="Reports a legacy transfer length." />
+    <command code="$GetListLen" name="File-list length request" category="Transfer" description="Requests the file-list length." />
+    <command code="$ListLen" name="File-list length" category="Transfer" description="Reports the file-list length." />
+    <command code="$Direction" name="Transfer direction negotiation" category="Transfer" description="Negotiates transfer direction and tie-breaking." />
+    <command code="$Cancel" name="Transfer cancellation" category="Transfer" description="Cancels a transfer." />
+    <command code="$Canceled" name="Transfer cancelled" category="Transfer" description="Reports that a transfer was cancelled." />
+    <command code="$BadPass" name="Invalid password" category="Status" description="Reports an invalid password." />
+    <command code="$HubIsFull" name="Hub capacity error" category="Status" description="Reports that the hub is full." />
+    <command code="$ValidateDenide" name="Nickname rejected" category="Status" description="Reports a rejected nickname." />
+    <command code="$MaxedOut" name="No upload slots" category="Status" description="Reports that no upload slot is available." />
+    <command code="$Failed" name="Operation failed" category="Status" description="Reports a failed operation." />
+    <command code="$Error" name="Protocol error" category="Status" description="Reports a protocol error." />
+    <command code="$Search" name="Search request" category="Search" description="Requests matching files or directories." />
+    <command code="$SR" name="Search result" category="Search" description="Returns one NMDC search result." />
+    <command code="$MyINFO" name="User information" category="Identity" description="Publishes NMDC user information." />
+    <command code="$GetINFO" name="User information request" category="Identity" description="Requests user information." />
+    <command code="$Hello" name="User accepted" category="Handshake" description="Accepts a nickname during login." />
+    <command code="$Version" name="Legacy client version marker" category="Handshake" description="Sends a legacy client version marker." />
+    <command code="$HubName" name="Hub name" category="Hub" description="Publishes the hub name." />
+    <command code="$GetNickList" name="User-list request" category="Identity" description="Requests the hub user list." />
+    <command code="$NickList" name="User list" category="Identity" description="Publishes a list of users." />
+    <command code="$OpList" name="Operator list" category="Identity" description="Publishes a list of operators." />
+    <command code="$BotList" name="Bot list" category="Identity" description="Publishes a list of bots." />
+    <command code="$Kick" name="Kick request" category="Hub" description="Requests that the hub remove a user." />
+    <command code="$Close" name="Silent kick request" category="Hub" description="Requests a silent user disconnection." />
+    <command code="$OpForceMove" name="Operator redirect" category="Hub" description="Redirects a user as an operator action." />
+    <command code="$ForceMove" name="Hub redirect" category="Hub" description="Redirects this client to another hub." />
+    <command code="$MyNick" name="Peer nickname" category="Handshake" description="Publishes a peer nickname." />
+    <command code="$Lock" name="Lock challenge" category="Handshake" description="Sends an NMDC lock challenge." />
+    <command code="$Key" name="Lock response" category="Handshake" description="Responds to an NMDC lock challenge." />
+    <command code="$Supports" name="Supported extensions" category="Handshake" description="Advertises supported NMDC extensions." />
+    <command code="$ValidateNick" name="Nickname validation" category="Handshake" description="Requests validation of a nickname." />
+    <command code="$Quit" name="User disconnected" category="Identity" description="Reports that a user disconnected." />
+    <command code="$ADCGET" name="Transfer request" category="Transfer" description="Requests an ADC-style NMDC transfer." />
+    <command code="$ADCSND" name="Transfer response" category="Transfer" description="Responds to an ADC-style NMDC transfer request." />
+    <command code="$UserIP" name="User IP information" category="Identity" description="Publishes user IP address information." />
+    <command code="$BotINFO" name="Hub-list bot information" category="Hub" description="Publishes bot information for a hub list." />
+    <command code="$HubINFO" name="Hub information" category="Hub" description="Publishes extended hub information." />
+    <command code="$HubTopic" name="Hub topic" category="Hub" description="Publishes the hub topic." />
+    <command code="$Capabilities" name="Capabilities" category="Handshake" description="Publishes peer capabilities." />
+    <command code="$IN" name="Incremental user information" category="Identity" description="Updates selected user information fields." />
+    <command code="$NickChange" name="Nickname change" category="Identity" description="Announces a runtime nickname change." />
+    <command code="$ClientNick" name="Nickname change confirmation" category="Identity" description="Confirms a runtime nickname change." />
+    <command code="$FeaturedNetworks" name="Network-prefix information" category="Extension" description="Publishes linked-network prefixes." />
+    <command code="$Z" name="Compressed command block" category="Compression" description="Carries an opaque compressed command block." />
+    <command code="$ZOn" name="Compressed stream activation" category="Compression" description="Activates compressed NMDC command transport." />
+    <command code="$GetZBlock" name="Compressed block request" category="Transfer" description="Requests a compressed transfer block." />
+    <command code="$UGetBlock" name="UTF-8 block request" category="Transfer" description="Requests a UTF-8 transfer block." />
+    <command code="$UGetZBlock" name="Compressed UTF-8 block request" category="Transfer" description="Requests a compressed UTF-8 transfer block." />
+    <command code="$Sending" name="Block transfer response" category="Transfer" description="Announces the length of a transfer block." />
+    <command code="$GetCID" name="Client ID request" category="Identity" description="Requests a client identifier." />
+    <command code="$CID" name="Client ID response" category="Identity" description="Returns a client identifier." />
+    <command code="$FailOver" name="Failover hub list" category="Hub" description="Publishes alternative hub addresses." />
+    <command code="$DHTConnect" name="DHT connection request" category="Connection" description="Requests a distributed-hash-table connection." />
+    <command code="$UserCommand" name="User command definition" category="Hub" description="Defines a hub-provided user command." />
+    <command code="$Ban" name="Operator ban command" category="Hub" description="Bans a user or address." />
+    <command code="$TempBan" name="Operator temporary ban command" category="Hub" description="Temporarily bans a user or address." />
+    <command code="$MultiConnectToMe" name="Linked-hub connect request" category="Connection" description="Requests a connection across linked hubs." />
+    <command code="$MultiSearch" name="Linked-hub search request" category="Search" description="Requests a search across linked hubs." />
+    <command code="$GetTestZBlock" name="Deprecated compressed block request" category="Transfer" description="Requests a deprecated compressed test block." />
+    <command code="$ClientID" name="Client ID notification" category="Identity" description="Publishes a client identifier." />
+    <command code="$CTM" name="Advanced connect request" category="Connection" description="Requests an advanced direct connection." />
+    <command code="$RCTM" name="Advanced reverse connect request" category="Connection" description="Requests an advanced reverse connection." />
+    <command code="$UnBan" name="Operator unban command" category="Hub" description="Removes a ban." />
+    <command code="$GetBanList" name="Operator ban-list request" category="Hub" description="Requests the hub ban list." />
+    <command code="$WhoIP" name="Operator IP lookup" category="Hub" description="Looks up users by IP address." />
+    <command code="$Banned" name="Operator ban-list response" category="Hub" description="Returns ban-list information." />
+    <command code="$GetTopic" name="Hub-topic request" category="Hub" description="Requests the hub topic." />
+    <command code="$SetTopic" name="Hub-topic update" category="Hub" description="Changes the hub topic." />
+    <command code="$GetBlock" name="Legacy block request" category="Transfer" description="Requests a legacy transfer block." />
+    <command code="$SA" name="Short active TTH search" category="Search" description="Sends a compact active Tiger Tree Hash search." />
+    <command code="$SP" name="Short passive TTH search" category="Search" description="Sends a compact passive Tiger Tree Hash search." />
+    <command code="$SetIcon" name="Hub icon" category="Hub" description="Publishes a hub icon URL." />
+    <command code="$SetLogo" name="Hub logo" category="Hub" description="Publishes a hub logo URL." />
+    <command code="$NickRule" name="Nickname rules" category="Hub" description="Publishes nickname validation rules." />
+    <command code="$BadNick" name="Nickname rule violation" category="Status" description="Reports a nickname rule violation." />
+    <command code="$SearchRule" name="Search rules" category="Hub" description="Publishes search validation rules." />
+    <command code="$GetHubURL" name="Hub URL request" category="Hub" description="Requests the connected hub URL." />
+    <command code="$MyHubURL" name="Client hub URL" category="Hub" description="Publishes a client's connected hub URL." />
+    <command code="$SetHubURL" name="Preferred hub URL" category="Hub" description="Publishes the preferred hub URL." />
+
+    <feature code="ADCGet" name="ADC-style transfers" description="ADC-style transfer commands." />
+    <feature code="BotList" name="Bot list" description="Hub bot-list support." />
+    <feature code="UserIP2" name="Full user IP updates" description="Full user IP update support." />
+    <feature code="BotINFO" name="Hub-list bot information" description="Hub-list bot metadata." />
+    <feature code="HubINFO" name="Hub-list information" description="Extended hub-list metadata." />
+    <feature code="HubTopic" name="Hub topic" description="Hub-topic publication." />
+    <feature code="IN" name="Incremental user information" description="Incremental user-information updates." />
+    <feature code="MCTo" name="Main-chat-style private messages" description="Main-chat-style private messages." />
+    <feature code="NickChange" name="Runtime nickname changes" description="Runtime nickname changes." />
+    <feature code="ClientNick" name="Nickname-change confirmation" description="Nickname-change confirmation." />
+    <feature code="FeaturedNetworks" name="Multi-hub chat prefixes" description="Multi-hub network prefixes." />
+    <feature code="ZLine" name="Compressed command lines" description="Compressed individual command lines." />
+    <feature code="ZPipe0" name="Compressed command stream" description="Compressed NMDC command stream." />
+    <feature code="GetZBlock" name="Compressed block transfers" description="Compressed block transfers." />
+    <feature code="ClientID" name="Client identifiers" description="Client identifier exchange." />
+    <feature code="UserCommand" name="Hub-provided user commands" description="Hub-provided user commands." />
+    <feature code="NoHello" name="Reduced login handshake" description="Login without the redundant hello response." />
+    <feature code="ChatOnly" name="Chat-only client" description="Chat-only client mode." />
+    <feature code="QuickList" name="Quick user-list handshake" description="Optimized user-list handshake." />
+    <feature code="TTHSearch" name="TTH searches" description="Tiger Tree Hash searches." />
+    <feature code="XmlBZList" name="XML bzip2 file lists" description="Bzip2-compressed XML file lists." />
+    <feature code="MiniSlots" name="Small-file mini slots" description="Small-file mini-slot support." />
+    <feature code="TTHL" name="Tiger-tree leaves" description="Tiger-tree leaf transfer support." />
+    <feature code="TTHF" name="TTH file identifiers" description="Tiger Tree Hash file identifiers." />
+    <feature code="TTHS" name="Short TTH searches" description="Compact Tiger Tree Hash searches." />
+    <feature code="ZLIG" name="Compressed ADCGET transfers" description="Compressed ADCGET transfer payloads." />
+    <feature code="ACTM" name="Advanced connection requests" description="Advanced direct-connection requests." />
+    <feature code="NoGetINFO" name="Unsolicited user information" description="User information without explicit requests." />
+    <feature code="BZList" name="Bzip2 legacy file lists" description="Legacy bzip2 file lists." />
+    <feature code="CHUNK" name="Chunked legacy transfers" description="Chunked legacy transfer support." />
+    <feature code="OpPlus" name="Extended operator commands" description="Extended operator commands." />
+    <feature code="Feed" name="Operator activity feed" description="Operator activity feed." />
+    <feature code="SaltPass" name="Salted password authentication" description="Salted password authentication." />
+    <feature code="IPv4" name="IPv4 support over an IPv6 hub connection" description="IPv4 connectivity through an IPv6 hub session." />
+    <feature code="IP64" name="IPv6 capability and dual-address reporting" description="IPv6 capability and dual-stack address reporting." />
+    <feature code="TLS" name="TLS-encrypted client-to-client connections" description="TLS-encrypted direct connections." />
+    <feature code="NAT" name="NAT traversal" description="NAT traversal support." />
+    <feature code="DHT0" name="Distributed hash table" description="Revision 0 distributed hash table." />
+    <feature code="FailOver" name="Alternative hub addresses" description="Alternative hub addresses." />
+    <feature code="NickRule" name="Nickname rules" description="Hub-provided nickname rules." />
+    <feature code="SearchRule" name="Search rules" description="Hub-provided search rules." />
+    <feature code="HubURL" name="Connected hub URL reporting" description="Connected hub URL reporting." />
+  </protocol>
+</protocol-definitions>

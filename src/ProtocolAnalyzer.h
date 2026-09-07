@@ -43,6 +43,8 @@ struct Field {
 	std::string code;
 	/** Human-readable explanation of the field's protocol meaning. */
 	std::string name;
+	/** Optional longer explanation supplied by the XML definition catalog. */
+	std::string description;
 	/** Sanitized decoded value, or <redacted> when policy requires it. */
 	std::string value;
 	/** True when the source value contains credentials or private identity data. */
@@ -66,6 +68,8 @@ struct Result {
 	std::string action;
 	/** Human-readable command name. */
 	std::string name;
+	/** Optional longer explanation supplied by the XML definition catalog. */
+	std::string description;
 	/** Broad functional grouping used by filters and colors. */
 	std::string category;
 	/** Routing type or transport context. */

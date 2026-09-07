@@ -44,6 +44,7 @@ endif
 TARGET := $(OUTPUT_DIR)/$(TARGET_NAME).dll
 UNSTRIPPED_TARGET := $(OUTPUT_DIR)/$(TARGET_NAME).unstripped.dll
 DEBUG_FILE := $(OUTPUT_DIR)/$(TARGET_NAME).dbg
+PROTOCOL_DEFINITIONS := $(OUTPUT_DIR)/protocol-definitions.xml
 
 COMMON_DEFINES := \
 	-D_WIN32_WINNT=0x0601 \
@@ -135,6 +136,7 @@ OBJS := \
 	src/main.o \
 	src/Plugin.o \
 	src/ProtocolAnalyzer.o \
+	src/ProtocolDefinitions.o \
 	src/SettingsDlg.o \
 	src/stdafx.o \
 	src/resource.o \
@@ -239,6 +241,9 @@ endef
 define MOVE_FILE
 	move /Y "$(subst /,\,$1)" "$(subst /,\,$2)" >NUL
 endef
+define COPY_FILE
+	copy /Y "$(subst /,\,$1)" "$(subst /,\,$2)" >NUL
+endef
 else
 define MAKE_DIRECTORY
 	mkdir -p "$1"
@@ -249,12 +254,15 @@ endef
 define MOVE_FILE
 	mv -f -- "$1" "$2"
 endef
+define COPY_FILE
+	cp -f -- "$1" "$2"
+endef
 endif
 
 .DELETE_ON_ERROR:
 .PHONY: all clean print-config source-audit protocol-analyzer-test
 
-all: $(TARGET) $(DEBUG_FILE)
+all: $(TARGET) $(DEBUG_FILE) $(PROTOCOL_DEFINITIONS)
 
 source-audit:
 	@echo Running GCC static analysis over every plugin, SDK, and DWT translation unit...
@@ -273,6 +281,10 @@ print-config:
 	@echo OUTPUT_DIR=$(OUTPUT_DIR)
 	@echo TARGET=$(TARGET)
 	@echo DEBUG_FILE=$(DEBUG_FILE)
+	@echo PROTOCOL_DEFINITIONS=$(PROTOCOL_DEFINITIONS)
+
+$(PROTOCOL_DEFINITIONS): $(ROOT)/protocol-definitions.xml | $(OUTPUT_DIR)
+	$(call COPY_FILE,$<,$@)
 
 $(UNSTRIPPED_TARGET): $(OBJS)
 	"$(CXX)" $(OBJS) $(LDFLAGS) $(LDLIBS) -o "$@.tmp" && $(call MOVE_FILE,$@.tmp,$@)
@@ -293,11 +305,14 @@ $(PROTOCOL_ANALYZER_TEST): \
 	$(ROOT)/tests/protocol_analyzer_tests.cpp \
 	$(ROOT)/src/ProtocolAnalyzer.cpp \
 	$(ROOT)/src/ProtocolAnalyzer.h \
+	$(ROOT)/src/ProtocolDefinitions.cpp \
+	$(ROOT)/src/ProtocolDefinitions.h \
 	Makefile | $(OUTPUT_DIR)
 	"$(CXX)" $(CPPFLAGS) $(CXXFLAGS) $(PROTOCOL_ANALYZER_TEST_FLAGS) \
 		-frandom-seed="protocol-analyzer-test-$(CONFIG)" \
 		"$(ROOT)/tests/protocol_analyzer_tests.cpp" \
 		"$(ROOT)/src/ProtocolAnalyzer.cpp" \
+		"$(ROOT)/src/ProtocolDefinitions.cpp" \
 		-static-libgcc -static-libstdc++ \
 		-Wl,--dynamicbase -Wl,--nxcompat -Wl,--high-entropy-va \
 		-Wl,--no-insert-timestamp \

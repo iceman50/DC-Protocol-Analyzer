@@ -212,6 +212,7 @@ $fixedFiles = @(
     "build_dist.ps1",
     "README.md",
     "CHANGELOG.md",
+    "protocol-definitions.xml",
     "LICENSE",
     "gpl-2.0.txt",
     "projects\make\Makefile",

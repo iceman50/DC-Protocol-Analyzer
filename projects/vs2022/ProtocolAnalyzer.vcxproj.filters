@@ -45,6 +45,9 @@
     <ClCompile Include="..\..\src\ProtocolAnalyzer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ProtocolDefinitions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -791,10 +794,16 @@
     <ClInclude Include="..\..\src\ProtocolAnalyzer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\ProtocolDefinitions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\src\resource.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+    <None Include="..\..\protocol-definitions.xml">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

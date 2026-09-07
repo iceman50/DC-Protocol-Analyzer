@@ -2240,7 +2240,7 @@ void GUI::timer() {
 				analysis = protocol_analyzer::analyzeBinaryPayload(
 					message.protocol, "blom", announcedBytes);
 				analysis.fields.push_back(protocol_analyzer::Field {
-					"request", "IGET correlation",
+					"request", "IGET correlation", "",
 					message.bloomRequestCorrelated ?
 						"Matched" : "Not observed", false
 				});

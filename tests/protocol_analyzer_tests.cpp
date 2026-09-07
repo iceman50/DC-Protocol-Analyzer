@@ -3,9 +3,11 @@
  */
 
 #include "src/ProtocolAnalyzer.h"
+#include "src/ProtocolDefinitions.h"
 
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <iostream>
 #include <random>
 #include <string>
@@ -118,6 +120,58 @@ int main() {
 	using protocol_analyzer::Status;
 	using protocol_analyzer::analyze;
 	using protocol_analyzer::analyzeBinaryPayload;
+
+	const std::string localizedCatalog = R"XML(<?xml version="1.0"?>
+<protocol-definitions version="1" default-language="en">
+  <protocol id="ADC">
+    <command code="XYZ" name="XML command" category="Extension"
+             description="Loaded from XML." routing="I">
+      <translation language="fr" name="Commande XML" category="Extension traduite"
+                   description="Description traduite." />
+      <field code="AA" name="XML field" description="Loaded field text.">
+        <translation language="fr" name="Champ XML"
+                     description="Description du champ." />
+      </field>
+    </command>
+    <feature code="TEST" name="Test feature" description="Loaded feature text.">
+      <translation language="fr" name="Fonction test"
+                   description="Fonction traduite." />
+    </feature>
+  </protocol>
+</protocol-definitions>)XML";
+	const auto localizedLoad = protocol_analyzer::loadProtocolDefinitionsXml(
+		localizedCatalog, "fr-CA", "localized-test.xml");
+	const auto localized = analyze("ADC", "IXYZ AAbonjour");
+	expect(localizedLoad.loaded && localizedLoad.commands == 1 &&
+		localizedLoad.features == 1 && localizedLoad.fields == 1 &&
+		localized.known && localized.name == "Commande XML" &&
+		localized.category == "Extension traduite" &&
+		localized.description == "Description traduite." &&
+		fieldName(localized, "AA") == "Champ XML" &&
+		protocol_analyzer::formatDetails(localized).find("Description du champ.") !=
+			std::string::npos,
+		"XML definitions add commands and select localized command and field text");
+	const auto wrongRouting = analyze("ADC", "HXYZ AAbonjour");
+	expect(wrongRouting.status == Status::Invalid,
+		"XML command routing constraints are enforced");
+	const auto localizedFeature = analyze("ADC", "ISUP ADTEST");
+	expect(hasFieldName(localizedFeature, "AD", "Added feature — Fonction test"),
+		"XML feature names are used by existing semantic decoders");
+	const auto rejectedCatalog = protocol_analyzer::loadProtocolDefinitionsXml(
+		"<!DOCTYPE x><protocol-definitions version=\"1\" />", "en", "unsafe.xml");
+	expect(!rejectedCatalog.loaded && analyze("ADC", "IXYZ AAstill-loaded").known,
+		"unsafe XML is rejected atomically without discarding the active catalog");
+
+	const auto bundledPath = std::filesystem::path(__FILE__).parent_path().parent_path() /
+		"protocol-definitions.xml";
+	const auto bundledLoad = protocol_analyzer::loadProtocolDefinitions(bundledPath, "en-US");
+	expect(bundledLoad.loaded && bundledLoad.commands == 129 &&
+		bundledLoad.features == 79 && bundledLoad.fields == 115,
+		"bundled XML contains every current command, feature, and generic ADC field");
+	const auto bundledBbs = analyze("ADC", "IBBD BDgeneral NIAnnouncements");
+	expect(bundledBbs.name == "Bulletin-board descriptor" &&
+		bundledBbs.description.find("BBS0") != std::string::npos,
+		"bundled BBS0 metadata is loaded from XML");
 
 	const auto binf = analyze("ADC",
 		"BINF ABCD NIalice DEFriendly\\suser SS1073741824 SF42000 SL3");

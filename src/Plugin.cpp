@@ -18,6 +18,7 @@
 
 #include "stdafx.h"
 #include "Plugin.h"
+#include "ProtocolDefinitions.h"
 
 /* Include plugin SDK helpers. There are more interfaces available that can be included in the same
 fashion (check the pluginsdk directory). */
@@ -36,6 +37,7 @@ fashion (check the pluginsdk directory). */
 #include <algorithm>
 #include <array>
 #include <exception>
+#include <filesystem>
 #include <limits>
 #include <mutex>
 #include <string_view>
@@ -726,6 +728,38 @@ bool Plugin::onLoad(DCCorePtr core, bool install, bool runtime) {
 		Config::setConfig("Dialog", true);
 		Config::setConfig("FirstRun", true);
 		Logger::log("Protocol Analyzer has been installed; check the plugins menu and the /raw chat command.");
+	}
+	protocol_analyzer::resetProtocolDefinitions();
+	string definitionLanguage = "en";
+#ifdef UNICODE
+	wchar_t localeName[LOCALE_NAME_MAX_LENGTH] {};
+	if(GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH) > 0) {
+		const auto convertedLocale = Util::fromT(localeName);
+		if(!convertedLocale.empty()) {
+			definitionLanguage = convertedLocale;
+		}
+	}
+#endif
+	protocol_analyzer::ProtocolDefinitionLoadResult definitionLoad;
+	const auto installPath = Config::getInstallPath();
+	if(installPath.empty()) {
+		definitionLoad.error = "the host did not provide the plugin installation path";
+	} else {
+		const auto definitionPath = std::filesystem::u8path(installPath) /
+			"protocol-definitions.xml";
+		definitionLoad = protocol_analyzer::loadProtocolDefinitions(
+			definitionPath, definitionLanguage);
+	}
+	if(definitionLoad.loaded) {
+		Logger::log("[Protocol Analyzer] Loaded " +
+			std::to_string(definitionLoad.commands) + " commands, " +
+			std::to_string(definitionLoad.features) + " features, and " +
+			std::to_string(definitionLoad.fields) +
+			" fields from protocol-definitions.xml (language " +
+			definitionLoad.language + ").");
+	} else {
+		Logger::log("[Protocol Analyzer] Could not load protocol-definitions.xml: " +
+			definitionLoad.error + ". Using compiled fallback definitions.");
 	}
 	gui.loadCaptureQueueLimits();
 

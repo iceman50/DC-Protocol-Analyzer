@@ -17,6 +17,7 @@
 */
 
 #include "ProtocolAnalyzer.h"
+#include "ProtocolDefinitions.h"
 
 #include <algorithm>
 #include <array>
@@ -588,8 +589,20 @@ void addField(Result& result, string code, string name, string value, bool sensi
 		value += "...";
 		addWarning(result, "A decoded field exceeded the display limit and was truncated.");
 	}
+	string description;
+	ProtocolFieldDefinition xmlDefinition;
+	if(findProtocolFieldDefinition(result.family, result.action, code,
+		xmlDefinition, false))
+	{
+		name = std::move(xmlDefinition.name);
+		description = std::move(xmlDefinition.description);
+	} else if(findProtocolFieldDefinition(result.family, result.action, code,
+		xmlDefinition, true) && xmlDefinition.name == name)
+	{
+		description = std::move(xmlDefinition.description);
+	}
 	result.fields.push_back(Field {
-		sanitize(code, 128), sanitize(name, 256),
+		sanitize(code, 128), sanitize(name, 256), sanitize(description, 1024),
 		sensitive && result.redactionEnabled ?
 			string("<redacted>") : sanitize(value, MAX_FIELD_VALUE_BYTES),
 		sensitive
@@ -611,7 +624,13 @@ const char* genericAdcFieldName(string_view code) {
 	return i == ADC_FIELD_NAMES.end() ? "Extension field" : i->second;
 }
 
-const char* adcFieldName(const Result& result, string_view code) {
+string adcFieldName(const Result& result, string_view code) {
+	ProtocolFieldDefinition xmlDefinition;
+	if(findProtocolFieldDefinition("ADC", result.action, string(code),
+		xmlDefinition, false))
+	{
+		return xmlDefinition.name;
+	}
 	const string_view action = result.action;
 
 	// ADC reuses its two-character identifiers between commands and extensions.
@@ -785,24 +804,36 @@ const char* adcFieldName(const Result& result, string_view code) {
 		if(code == "FO") return "Failover hub addresses";
 		if(code == "UP") return "Hub uptime";
 	}
+	if(findProtocolFieldDefinition("ADC", result.action, string(code),
+		xmlDefinition, true))
+	{
+		return xmlDefinition.name;
+	}
 	return genericAdcFieldName(code);
 }
 
 std::vector<string_view> split(string_view value, char delimiter, size_t maximum);
 
 template<size_t Size>
-const char* featureName(const std::array<FeatureDefinition, Size>& definitions, string_view code, bool ignoreCase = false) {
+string featureName(const char* family,
+	const std::array<FeatureDefinition, Size>& definitions, string_view code,
+	bool ignoreCase = false)
+{
+	ProtocolFeatureDefinition xmlDefinition;
+	if(findProtocolFeatureDefinition(family, string(code), xmlDefinition, ignoreCase)) {
+		return xmlDefinition.name;
+	}
 	const auto i = std::find_if(definitions.begin(), definitions.end(),
 		[code, ignoreCase](const FeatureDefinition& definition) {
 			return ignoreCase ? asciiEqualNoCase(code, definition.code) :
 				code == definition.code;
 		});
-	return i == definitions.end() ? nullptr : i->name;
+	return i == definitions.end() ? string() : string(i->name);
 }
 
-string describeFeature(string_view code, const char* name) {
+string describeFeature(string_view code, string_view name) {
 	string value = bounded(code, 64);
-	if(name) {
+	if(!name.empty()) {
 		value += " (";
 		value += name;
 		value += ')';
@@ -818,7 +849,7 @@ string describeAdcFeatureList(string_view value) {
 			description += ", ";
 		}
 		description += describeFeature(feature,
-			featureName(ADC_FEATURE_DEFINITIONS, feature));
+			featureName("ADC", ADC_FEATURE_DEFINITIONS, feature));
 		if(description.size() > MAX_FIELD_VALUE_BYTES) {
 			description.resize(MAX_FIELD_VALUE_BYTES);
 			description += "...";
@@ -867,10 +898,10 @@ void parseAdcFeatureSelector(Result& result, string_view selector) {
 			continue;
 		}
 
-		const auto name = featureName(ADC_FEATURE_DEFINITIONS, code);
+		const auto name = featureName("ADC", ADC_FEATURE_DEFINITIONS, code);
 		addField(result, string(1, operation), operation == '+' ?
-			(name ? string("Required feature — ") + name : "Required feature") :
-			(name ? string("Excluded feature — ") + name : "Excluded feature"),
+			(!name.empty() ? string("Required feature — ") + name : "Required feature") :
+			(!name.empty() ? string("Excluded feature — ") + name : "Excluded feature"),
 			bounded(code));
 	}
 }
@@ -2059,6 +2090,12 @@ Result analyzeAdc(string_view raw, bool redactionEnabled) {
 		result.routing = "Connection";
 		result.summary = "ADC keep-alive";
 		result.safeMessage = "\\n";
+		ProtocolCommandDefinition xmlDefinition;
+		if(findProtocolCommandDefinition("ADC", "KEEPALIVE", xmlDefinition)) {
+			result.name = std::move(xmlDefinition.name);
+			result.category = std::move(xmlDefinition.category);
+			result.description = std::move(xmlDefinition.description);
+		}
 		return result;
 	}
 
@@ -2127,9 +2164,20 @@ Result analyzeAdc(string_view raw, bool redactionEnabled) {
 			"A BBS0 post document must not contain CR before its header LF.", true);
 	}
 
+	ProtocolCommandDefinition xmlDefinition;
+	const bool xmlKnown = findProtocolCommandDefinition("ADC", string(action), xmlDefinition);
 	const auto definition = findDefinition(
 		ADC_DEFINITIONS.data(), ADC_DEFINITIONS.data() + ADC_DEFINITIONS.size(), action);
-	if(definition) {
+	if(xmlKnown) {
+		result.name = std::move(xmlDefinition.name);
+		result.category = std::move(xmlDefinition.category);
+		result.description = std::move(xmlDefinition.description);
+		if(!xmlDefinition.routing.empty() &&
+			xmlDefinition.routing.find(type) == string::npos)
+		{
+			addWarning(result, "ADC routing type is not allowed by the XML command definition.", true);
+		}
+	} else if(definition) {
 		result.name = definition->name;
 		result.category = definition->category;
 	} else {
@@ -2238,11 +2286,11 @@ Result analyzeAdc(string_view raw, bool redactionEnabled) {
 			}
 			const auto operation = feature.substr(0, std::min<size_t>(2, feature.size()));
 			const auto code = feature.size() > 2 ? feature.substr(2) : string_view();
-			const auto name = featureName(ADC_FEATURE_DEFINITIONS, code);
+			const auto name = featureName("ADC", ADC_FEATURE_DEFINITIONS, code);
 			addField(result, bounded(operation),
 				operation == "RM" ?
-					(name ? string("Removed feature — ") + name : "Removed feature") :
-					(name ? string("Added feature — ") + name : "Added feature"),
+					(!name.empty() ? string("Removed feature — ") + name : "Removed feature") :
+					(!name.empty() ? string("Added feature — ") + name : "Added feature"),
 				bounded(code));
 		}
 	} else if(action == "SID") {
@@ -3295,10 +3343,10 @@ void parseNmdcSupports(Result& result, string_view parameters) {
 	size_t recognized = 0;
 	for(const auto token : tokens) {
 		if(!token.empty()) {
-			const auto name = featureName(NMDC_FEATURE_DEFINITIONS, token, true);
-			recognized += name ? 1U : 0U;
+			const auto name = featureName("NMDC", NMDC_FEATURE_DEFINITIONS, token, true);
+			recognized += !name.empty() ? 1U : 0U;
 			addField(result, "feature",
-				name ? string("Supported extension — ") + name : "Supported extension",
+				!name.empty() ? string("Supported extension — ") + name : "Supported extension",
 				bounded(token));
 		}
 	}
@@ -3331,6 +3379,12 @@ Result analyzeNmdc(string_view raw, bool redactionEnabled) {
 		result.routing = "Connection";
 		result.summary = "NMDC keep-alive";
 		result.safeMessage = "|";
+		ProtocolCommandDefinition xmlDefinition;
+		if(findProtocolCommandDefinition("NMDC", "KEEPALIVE", xmlDefinition)) {
+			result.name = std::move(xmlDefinition.name);
+			result.category = std::move(xmlDefinition.category);
+			result.description = std::move(xmlDefinition.description);
+		}
 		return result;
 	}
 
@@ -3364,6 +3418,12 @@ Result analyzeNmdc(string_view raw, bool redactionEnabled) {
 		result.action = "Chat";
 		result.name = "Public chat message";
 		result.category = "Chat";
+		ProtocolCommandDefinition xmlDefinition;
+		if(findProtocolCommandDefinition("NMDC", "Chat", xmlDefinition)) {
+			result.name = std::move(xmlDefinition.name);
+			result.category = std::move(xmlDefinition.category);
+			result.description = std::move(xmlDefinition.description);
+		}
 		const auto close = body.find('>');
 		if(close == string_view::npos) {
 			addWarning(result, "Public chat message is missing the closing nickname bracket.",
@@ -3408,9 +3468,15 @@ Result analyzeNmdc(string_view raw, bool redactionEnabled) {
 	string_view parameters = commandEnd < body.size() ? body.substr(commandEnd + 1) :
 		string_view();
 
+	ProtocolCommandDefinition xmlDefinition;
+	const bool xmlKnown = findProtocolCommandDefinition("NMDC", string(command), xmlDefinition);
 	const auto definition = findDefinition(NMDC_DEFINITIONS.data(),
 		NMDC_DEFINITIONS.data() + NMDC_DEFINITIONS.size(), command);
-	if(definition) {
+	if(xmlKnown) {
+		result.name = std::move(xmlDefinition.name);
+		result.category = std::move(xmlDefinition.category);
+		result.description = std::move(xmlDefinition.description);
+	} else if(definition) {
 		result.name = definition->name;
 		result.category = definition->category;
 	} else {
@@ -3601,7 +3667,10 @@ bool looksLikeNmdcDatagram(string_view raw) {
 
 	const auto definition = findDefinition(NMDC_DEFINITIONS.data(),
 		NMDC_DEFINITIONS.data() + NMDC_DEFINITIONS.size(), command);
-	return definition != nullptr || delimiter != string_view::npos;
+	ProtocolCommandDefinition xmlDefinition;
+	return definition != nullptr ||
+		findProtocolCommandDefinition("NMDC", string(command), xmlDefinition) ||
+		delimiter != string_view::npos;
 }
 
 /*
@@ -3632,8 +3701,11 @@ bool looksLikeAdcDatagram(string_view raw) {
 	const auto action = body.substr(1, 3);
 	const auto definition = findDefinition(ADC_DEFINITIONS.data(),
 		ADC_DEFINITIONS.data() + ADC_DEFINITIONS.size(), action);
+	ProtocolCommandDefinition xmlDefinition;
 	constexpr size_t MIN_PLAUSIBLE_CID_LENGTH = 20;
-	return definition != nullptr || frameEnd != string_view::npos ||
+	return definition != nullptr ||
+		findProtocolCommandDefinition("ADC", string(action), xmlDefinition) ||
+		frameEnd != string_view::npos ||
 		cid.size() >= MIN_PLAUSIBLE_CID_LENGTH;
 }
 
@@ -3836,6 +3908,10 @@ std::string formatDetails(const Result& result) {
 	}
 	appendBounded(details, "\r\nName: ");
 	appendBounded(details, sanitize(result.name, 256));
+	if(!result.description.empty()) {
+		appendBounded(details, "\r\nDescription: ");
+		appendBounded(details, sanitize(result.description, 1024));
+	}
 	appendBounded(details, "\r\nCategory: ");
 	appendBounded(details, sanitize(result.category, 128));
 	appendBounded(details, "\r\nRouting: ");
@@ -3856,6 +3932,10 @@ std::string formatDetails(const Result& result) {
 			appendBounded(details, sanitize(field.name, 256));
 			appendBounded(details, ": ");
 			appendBounded(details, sanitize(field.value, MAX_FIELD_VALUE_BYTES));
+			if(!field.description.empty()) {
+				appendBounded(details, "\r\n      ");
+				appendBounded(details, sanitize(field.description, 1024));
+			}
 		}
 	}
 	if(!result.warnings.empty()) {

@@ -260,6 +260,7 @@
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\Plugin.cpp" />
     <ClCompile Include="..\..\src\ProtocolAnalyzer.cpp" />
+    <ClCompile Include="..\..\src\ProtocolDefinitions.cpp" />
     <ClCompile Include="..\..\src\SettingsDlg.cpp" />
     <ClCompile Include="..\..\src\stdafx.cpp" />
   </ItemGroup>
@@ -415,6 +416,7 @@
     <ClInclude Include="..\..\src\GUI.h" />
     <ClInclude Include="..\..\src\Plugin.h" />
     <ClInclude Include="..\..\src\ProtocolAnalyzer.h" />
+    <ClInclude Include="..\..\src\ProtocolDefinitions.h" />
     <ClInclude Include="..\..\src\resource.h" />
     <ClInclude Include="..\..\src\SettingsDlg.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
@@ -424,6 +426,11 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\src\resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\protocol-definitions.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

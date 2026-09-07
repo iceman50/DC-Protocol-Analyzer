@@ -20,6 +20,7 @@
 		<File>GPL-2.0.txt</File>
 		<File>LibDWT-License.txt</File>
 		<File>THIRD-PARTY.txt</File>
+		<File>protocol-definitions.xml</File>
 		<File>BUILD-PROVENANCE.txt</File>
 		<File>SHA256SUMS</File>
 	</Files>

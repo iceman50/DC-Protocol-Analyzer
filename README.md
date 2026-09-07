@@ -268,6 +268,39 @@ through the generic decoder when unknown.
 
 Reference: [NMDC protocol documentation](https://dc-protocols.github.io/NMDC.html)
 
+## XML protocol definitions
+
+`protocol-definitions.xml` is loaded from the plugin installation directory at
+startup. It contains the complete ADC and NMDC command catalog, advertised
+feature names, generic ADC field names, categories, and longer descriptions.
+Updating that file can add a new structurally decoded ADC or NMDC command
+without rebuilding the DLL. Existing commands with specialized wire formats
+continue to use their bounded C++ semantic validators; an XML-only command is
+preserved with the analyzer's generic field decoder.
+
+Definitions may contain locale-specific text while keeping wire codes stable:
+
+```xml
+<command code="XYZ" name="Example command" category="Extension"
+         description="An example extension." routing="I">
+  <translation language="de" name="Beispielbefehl"
+               category="Erweiterung"
+               description="Eine Beispielerweiterung." />
+  <field code="AA" name="Example value" description="A named field." />
+</command>
+```
+
+The loader selects the Windows user locale, then its base language, then the
+catalog's `default-language`, with the element's own text as the final fallback.
+Translations are supported on commands, features, and fields. ADC `routing` is
+optional and limits an XML command to the listed `B`, `C`, `D`, `E`, `F`, `H`,
+`I`, or `U` route letters.
+
+The XML is data only: declarations such as `DOCTYPE`, CDATA, processing
+instructions, external entities, duplicate definitions, unsupported protocol
+families, and invalid wire codes are rejected. Loading is atomic, and a missing
+or rejected startup catalog leaves the compiled safe definitions active.
+
 ## Security model
 
 Protocol Analyzer treats every captured byte as untrusted.
@@ -293,6 +326,7 @@ Important hard limits include:
 | Resource | Limit |
 | --- | ---: |
 | Captured/analyzed message | 64 KiB |
+| Protocol-definition XML | 1 MiB / 8,192 elements |
 | Decoded fields | 64 |
 | Field value | 4 KiB |
 | Parser warnings | 16 |
@@ -349,9 +383,9 @@ Use **Protocol Analyzer → Show the dialog** from the plugin menu to restore a
 window that was hidden manually. Monitor-creation failures are written to the
 host system log with bounded diagnostic text.
 
-The package contains `ProtocolAnalyzer.dll`, `ProtocolAnalyzer.dbg`, the
-plugin icon, licenses, third-party notices, build provenance, and internal
-SHA-256 checksums.
+The package contains `ProtocolAnalyzer.dll`, `ProtocolAnalyzer.dbg`,
+`protocol-definitions.xml`, the plugin icon, licenses, third-party notices,
+build provenance, and internal SHA-256 checksums.
 
 ## Building
 
@@ -417,6 +451,8 @@ Each canonical build runs:
 ## Project files
 
 - `src/ProtocolAnalyzer.cpp` — bounded ADC/NMDC parser.
+- `src/ProtocolDefinitions.cpp` — bounded, atomic XML catalog loader.
+- `protocol-definitions.xml` — editable command, feature, field, and translation catalog.
 - `src/GUI.cpp` — capture monitor, filters, inspector, logging, and themes.
 - `src/Plugin.cpp` — host lifecycle, network hooks, and chat commands.
 - `tests/protocol_analyzer_tests.cpp` — parser/security/performance tests.

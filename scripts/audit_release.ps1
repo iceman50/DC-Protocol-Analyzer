@@ -41,6 +41,7 @@ $fixedTimestamp = [System.DateTimeOffset]::new(
 $expectedEntries = @(
     "BUILD-PROVENANCE.txt",
     "ProtocolAnalyzer.ico",
+    "protocol-definitions.xml",
     $packageDebugName,
     $packageDllName,
     "GPL-2.0.txt",

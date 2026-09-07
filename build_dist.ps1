@@ -98,6 +98,9 @@ $smokeTestSource = Join-Path $projectRoot "tests\plugin_abi_smoke.cpp"
 $protocolAnalyzerTestSource = Join-Path $projectRoot "tests\protocol_analyzer_tests.cpp"
 $protocolAnalyzerSource = Join-Path $projectRoot "src\ProtocolAnalyzer.cpp"
 $protocolAnalyzerHeader = Join-Path $projectRoot "src\ProtocolAnalyzer.h"
+$protocolDefinitionsSource = Join-Path $projectRoot "src\ProtocolDefinitions.cpp"
+$protocolDefinitionsHeader = Join-Path $projectRoot "src\ProtocolDefinitions.h"
+$protocolDefinitionsXml = Join-Path $projectRoot "protocol-definitions.xml"
 $fixedArchiveTimestamp = [System.DateTimeOffset]::new(
     1980, 1, 1, 0, 0, 0, [System.TimeSpan]::Zero)
 
@@ -821,6 +824,7 @@ function New-DcextPackage {
         $manifestTemplate,
         $iconPath,
         $thirdPartyPath,
+        $protocolDefinitionsXml,
         (Join-Path $projectRoot "LICENSE"),
         (Join-Path $projectRoot "gpl-2.0.txt"),
         (Join-Path $projectRoot "dwt\License.txt"),
@@ -860,6 +864,8 @@ function New-DcextPackage {
             Join-Path $stageDirectory "LibDWT-License.txt")
         Copy-Item -LiteralPath $thirdPartyPath -Destination (
             Join-Path $stageDirectory "THIRD-PARTY.txt")
+        Copy-Item -LiteralPath $protocolDefinitionsXml -Destination (
+            Join-Path $stageDirectory "protocol-definitions.xml")
 
         $provenanceLines = @(
             "Format-Version: 1",
@@ -873,6 +879,9 @@ function New-DcextPackage {
             "Build-Context-SHA256: $($BuildResult.ContextSignature)",
             "Protocol-Analyzer-Source-SHA256: $((Get-FileHash -LiteralPath $protocolAnalyzerSource -Algorithm SHA256).Hash)",
             "Protocol-Analyzer-Header-SHA256: $((Get-FileHash -LiteralPath $protocolAnalyzerHeader -Algorithm SHA256).Hash)",
+            "Protocol-Definitions-Source-SHA256: $((Get-FileHash -LiteralPath $protocolDefinitionsSource -Algorithm SHA256).Hash)",
+            "Protocol-Definitions-Header-SHA256: $((Get-FileHash -LiteralPath $protocolDefinitionsHeader -Algorithm SHA256).Hash)",
+            "Protocol-Definitions-XML-SHA256: $((Get-FileHash -LiteralPath $protocolDefinitionsXml -Algorithm SHA256).Hash)",
             "Protocol-Analyzer-Test-SHA256: $((Get-FileHash -LiteralPath $protocolAnalyzerTestSource -Algorithm SHA256).Hash)",
             "ABI-Smoke-Test-SHA256: $((Get-FileHash -LiteralPath $smokeTestSource -Algorithm SHA256).Hash)",
             "Static-Analysis: $(if ($BuildResult.StaticAnalysis) { 'Passed' } else { 'Skipped' })",
@@ -892,6 +901,7 @@ function New-DcextPackage {
             "GPL-2.0.txt",
             "LibDWT-License.txt",
             "THIRD-PARTY.txt",
+            "protocol-definitions.xml",
             "BUILD-PROVENANCE.txt",
             "SHA256SUMS"
         )
@@ -943,7 +953,8 @@ function New-DcextPackage {
 foreach ($requiredPath in @(
     $makefilePath, $manifestTemplate, $iconPath, $thirdPartyPath, $auditScript,
     $smokeTestSource, $protocolAnalyzerTestSource, $protocolAnalyzerSource,
-    $protocolAnalyzerHeader, $peTimestampNormalizer)) {
+    $protocolAnalyzerHeader, $protocolDefinitionsSource, $protocolDefinitionsHeader,
+    $protocolDefinitionsXml, $peTimestampNormalizer)) {
     if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
         throw "Required release input was not found: $requiredPath"
     }

@@ -53,6 +53,7 @@ string makeManifest() {
 		"\t\t<File>GPL-2.0.txt</File>\n"
 		"\t\t<File>LibDWT-License.txt</File>\n"
 		"\t\t<File>THIRD-PARTY.txt</File>\n"
+		"\t\t<File>protocol-definitions.xml</File>\n"
 		"\t\t<File>BUILD-PROVENANCE.txt</File>\n"
 		"\t\t<File>SHA256SUMS</File>\n"
 		"\t</Files>\n"
