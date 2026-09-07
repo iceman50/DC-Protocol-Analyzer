@@ -51,8 +51,8 @@ END
 //
 
 VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,0,0
- PRODUCTVERSION 1,1,0,0
+ FILEVERSION 1,2,0,0
+ PRODUCTVERSION 1,2,0,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -69,12 +69,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "https://github.com/iceman50/DC-Protocol-Analyzer"
             VALUE "FileDescription", "Protocol Analyzer plugin for DC++"
-            VALUE "FileVersion", "1.01"
+            VALUE "FileVersion", "1.02"
             VALUE "InternalName", "ProtocolAnalyzer"
             VALUE "LegalCopyright", "Copyright (C) 2026 iceman50"
             VALUE "OriginalFilename", "ProtocolAnalyzer.dll"
             VALUE "ProductName", "Protocol Analyzer"
-            VALUE "ProductVersion", "1.01"
+            VALUE "ProductVersion", "1.02"
         END
     END
     BLOCK "VarFileInfo"

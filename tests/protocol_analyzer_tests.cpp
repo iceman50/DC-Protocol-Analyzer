@@ -173,6 +173,12 @@ int main() {
 		fieldName(rtf0Support, "AD").find("Rich-text chat messages") !=
 			std::string::npos,
 		"ADC SUP detects the RTF0 rich-text chat extension");
+	const auto bbs0Support = analyze("ADC", "ISUP ADBASE ADTIGR ADBBS0");
+	expect(bbs0Support.status == Status::Valid &&
+		fieldValue(bbs0Support, "AD") == "BASE" &&
+		protocol_analyzer::formatDetails(bbs0Support).find("Bulletin boards") !=
+			std::string::npos,
+		"ADC SUP detects the BBS0 bulletin-board extension");
 	const auto hsup = analyze("ADC", "HSUP ADBASE RMZLIF");
 	expect(hsup.command == "HSUP" && hsup.routing == "To hub",
 		"HSUP routing is decoded");
@@ -231,10 +237,169 @@ int main() {
 			std::string::npos &&
 		hasFieldName(rtf0FeatureCast, "RT", "Rich-text formatting (RTF0)"),
 		"ADC RTF0 feature-broadcast messages decode their route and RT flag");
+	const auto airDcPassiveSearch = analyze("ADC",
+		"FSCH ABCD +TCP4-NAT0 TO4172403789 ANdvdrip");
+	expect(airDcPassiveSearch.status == Status::Valid &&
+		airDcPassiveSearch.routing == "Feature broadcast" &&
+		fieldValue(airDcPassiveSearch, "+") == "TCP4" &&
+		fieldName(airDcPassiveSearch, "+").find("Incoming TCP connections") !=
+			std::string::npos &&
+		fieldValue(airDcPassiveSearch, "-") == "NAT0" &&
+		fieldName(airDcPassiveSearch, "-").find("NAT traversal") !=
+			std::string::npos &&
+		fieldValue(airDcPassiveSearch, "AN") == "dvdrip" &&
+		fieldValue(airDcPassiveSearch, "TO") == "4172403789",
+		"ADC feature searches decode compound required and excluded selectors");
+	const auto malformedFeatureSearch = analyze("ADC",
+		"FSCH ABCD +TCP4-NAT ANubuntu");
+	expect(malformedFeatureSearch.status == Status::Invalid &&
+		fieldValue(malformedFeatureSearch, "AN") == "ubuntu",
+		"ADC feature searches reject malformed selectors without consuming parameters");
 	const auto disabledRichTextFlag = analyze("ADC", "BMSG ABCD Plain RT0");
 	expect(disabledRichTextFlag.status == Status::Valid &&
 		disabledRichTextFlag.summary.find("rich-text") == std::string::npos,
 		"ADC RTF0 RT0 does not classify a message as rich text");
+
+	const std::string bbsTth(39, 'A');
+	const std::string bbsCid(39, 'B');
+	const auto bbsBoard = analyze("ADC",
+		"IBBD BDgeneral NIGeneral\\sdiscussion "
+		"DEAnything\\sabout\\sthis\\shub PE15 MS262144 "
+		"TS1786439662 OT1767225600 NP311");
+	expect(bbsBoard.known && bbsBoard.status == Status::Valid &&
+		bbsBoard.category == "Bulletin board" &&
+		hasFieldName(bbsBoard, "BD", "Board name") &&
+		fieldValue(bbsBoard, "PE").find("Subscribe") != std::string::npos &&
+		fieldValue(bbsBoard, "PE.subscribe") == "Set" &&
+		fieldValue(bbsBoard, "PE.thread") == "Set" &&
+		fieldValue(bbsBoard, "PE.reply") == "Set" &&
+		fieldValue(bbsBoard, "PE.withdraw-own") == "Set" &&
+		fieldValue(bbsBoard, "PE.withdraw-any").empty() &&
+		bbsBoard.summary.find("general: General discussion") != std::string::npos,
+		"BBS0 board descriptors decode metadata and every permission bit");
+
+	const auto bbsSubscribe = analyze("ADC",
+		"HBBL BDgeneral TS1786436000");
+	const auto bbsSingle = analyze("ADC",
+		"HBBL BDgeneral TR" + bbsTth);
+	const auto bbsCancel = analyze("ADC", "HBBL BDgeneral RM1");
+	expect(bbsSubscribe.status == Status::Valid &&
+		bbsSingle.status == Status::Valid &&
+		bbsCancel.status == Status::Valid &&
+		hasFieldName(bbsSubscribe, "TS", "Resume timestamp") &&
+		hasFieldName(bbsSingle, "TR", "Requested post TTH") &&
+		hasFieldName(bbsCancel, "RM", "Cancel subscription") &&
+		bbsSubscribe.summary.find("subscribe to board general") !=
+			std::string::npos &&
+		bbsSingle.summary.find("request bulletin entry") != std::string::npos &&
+		bbsCancel.summary.find("cancel subscription") != std::string::npos,
+		"BBS0 BBL distinguishes subscriptions, single-entry requests, and cancellation");
+
+	const auto bbsEntry = analyze("ADC",
+		"IBBL TR" + bbsTth + " SI412 BDgeneral ID" + bbsCid +
+		" NIjanvidar TH" + bbsTth +
+		" SJHub\\supgrade\\son\\sSaturday TS1786439662");
+	const auto bbsTombstone = analyze("ADC",
+		"IBBL TR" + bbsTth + " BDgeneral TS1786443100 RM1");
+	expect(bbsEntry.status == Status::Valid &&
+		bbsTombstone.status == Status::Valid &&
+		hasFieldName(bbsEntry, "ID", "Submitting session CID") &&
+		hasFieldName(bbsEntry, "SJ", "Subject (unverified index hint)") &&
+		bbsEntry.summary.find("Hub upgrade on Saturday") != std::string::npos &&
+		hasFieldName(bbsTombstone, "RM", "Post withdrawn") &&
+		bbsTombstone.summary.find("withdrawn bulletin") != std::string::npos,
+		"BBS0 index entries and minimal tombstones use their distinct field shapes");
+
+	const auto bbsSubmit = analyze("ADC",
+		"HBBP TR" + bbsTth +
+		" SI412 BDgeneral SJHub\\supgrade\\son\\sSaturday");
+	const auto bbsWithdraw = analyze("ADC",
+		"HBBP TR" + bbsTth + " BDgeneral RM1");
+	expect(bbsSubmit.status == Status::Valid &&
+		bbsWithdraw.status == Status::Valid &&
+		hasFieldName(bbsSubmit, "SI", "Declared post document size") &&
+		hasFieldName(bbsWithdraw, "RM", "Withdraw post") &&
+		bbsSubmit.summary.find("submit bulletin to general") != std::string::npos &&
+		bbsWithdraw.summary.find("withdraw bulletin") != std::string::npos,
+		"BBS0 BBP decodes submission and withdrawal operations");
+
+	const auto bbsDocument = analyze("ADC",
+		"IBB0 ID" + bbsCid +
+		" SJHub\\supgrade\\son\\sSaturday DA1786439650 RT1\n"
+		"The hub will be **offline** on Saturday.");
+	expect(bbsDocument.status == Status::Valid &&
+		bbsDocument.name == "Bulletin-board post document" &&
+		hasFieldName(bbsDocument, "ID", "Claimed author CID") &&
+		hasFieldName(bbsDocument, "RT", "Post body format (RTF0)") &&
+		hasFieldName(bbsDocument, "body", "Post body (RTF0 markdown subset)") &&
+		fieldValue(bbsDocument, "body") ==
+			"The hub will be **offline** on Saturday." &&
+		fieldValue(bbsDocument, "bodyBytes") == "40" &&
+		bbsDocument.summary.find("RTF0 body") != std::string::npos,
+		"BBS0 post documents separate and decode the canonical header and raw body");
+
+	const auto bbsBadBoard = analyze("ADC",
+		"IBBD BD../general PE1 MS1024 TS0 OT0");
+	const auto bbsBadRoute = analyze("ADC",
+		"HBBD BDgeneral PE1 MS1024 TS0 OT0");
+	const auto bbsConflictingRequest = analyze("ADC",
+		"HBBL BDgeneral TS1 TR" + bbsTth);
+	const auto bbsIncompleteEntry = analyze("ADC",
+		"IBBL TR" + bbsTth + " BDgeneral ID" + bbsCid +
+		" TH" + bbsTth + " TS1");
+	const auto bbsIncompleteSubmit = analyze("ADC",
+		"HBBP TRshort BDgeneral");
+	expect(bbsBadBoard.status == Status::Invalid &&
+		bbsBadRoute.status == Status::Invalid &&
+		bbsConflictingRequest.status == Status::Invalid &&
+		bbsIncompleteEntry.status == Status::Invalid &&
+		bbsIncompleteSubmit.status == Status::Invalid,
+		"BBS0 rejects invalid board names, routes, request modes, hashes, and required fields");
+
+	const auto bbsNonCanonicalOrder = analyze("ADC",
+		"IBB0 SJSubject ID" + bbsCid + "\nbody");
+	const auto bbsRepeatedDocumentField = analyze("ADC",
+		"IBB0 ID" + bbsCid + " SJSubject SJAgain\nbody");
+	const auto bbsNewlineSubject = analyze("ADC",
+		"IBB0 ID" + bbsCid + " SJbad\\nsubject\nbody");
+	const auto bbsCrHeader = analyze("ADC",
+		"IBB0 ID" + bbsCid + " SJSubject\r\nbody");
+	const auto bbsMissingHeaderLf = analyze("ADC",
+		"IBB0 ID" + bbsCid + " SJSubject");
+	expect(bbsNonCanonicalOrder.status == Status::Invalid &&
+		bbsRepeatedDocumentField.status == Status::Invalid &&
+		bbsNewlineSubject.status == Status::Invalid &&
+		bbsCrHeader.status == Status::Invalid &&
+		bbsMissingHeaderLf.status == Status::Invalid,
+		"BBS0 post headers enforce canonical order, uniqueness, subject, and LF rules");
+
+	const auto bbsReservedFormat = analyze("ADC",
+		"IBB0 ID" + bbsCid + " SJSubject RT2\nplain body");
+	const auto bbsDiscardedHubFields = analyze("ADC",
+		"HBBP TR" + bbsTth + " SI42 BDgeneral ID" + bbsCid +
+		" TH" + bbsTth + " TS1");
+	expect(bbsReservedFormat.status == Status::Warning &&
+		hasFieldName(bbsReservedFormat, "body", "Post body (plain text)") &&
+		bbsDiscardedHubFields.status == Status::Warning &&
+		hasFieldName(bbsDiscardedHubFields, "ID",
+			"Client-supplied CID (discarded by hub)"),
+		"BBS0 preserves reserved body formats and identifies BBP fields discarded by hubs");
+
+	const auto bbsStatus = analyze("ADC",
+		"ISTA 176 No\\ssuch\\spost FCBBL TR" + bbsTth);
+	const auto bbsPermissionStatus = analyze("ADC",
+		"ISTA 125 Permission\\sdenied FCBBP TR" + bbsTth);
+	const auto bbsBadSeverity = analyze("ADC",
+		"ISTA 276 No\\ssuch\\spost FCBBL TR" + bbsTth);
+	expect(bbsStatus.status == Status::Valid &&
+		fieldValue(bbsStatus, "severity") == "Recoverable error" &&
+		fieldValue(bbsStatus, "meaning") ==
+			"No index entry for requested post" &&
+		hasFieldName(bbsStatus, "TR", "Related post TTH") &&
+		fieldValue(bbsPermissionStatus, "meaning") ==
+			"Permission denied for bulletin-board operation" &&
+		bbsBadSeverity.status == Status::Invalid,
+		"BBS0 refusal codes decode their meaning and require severity 1");
 	const auto hubInfFields = analyze("ADC",
 		"IINF MS1024 MR1 MO2 MU3 XU6 FOadc://backup.example UP3600");
 	expect(hasFieldName(hubInfFields, "MS", "Minimum share") &&

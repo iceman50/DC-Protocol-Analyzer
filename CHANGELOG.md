@@ -7,6 +7,21 @@ The project uses a two-component public version, beginning with 1.00 after the
 Protocol Analyzer rebrand. Earlier DevPlugin releases are retained below as
 legacy history.
 
+## [1.02] - Unreleased
+
+### Added
+
+- Added full ADC `BBS0` bulletin-board analysis: feature negotiation, board
+  descriptors and permission masks, subscriptions and direct entry requests,
+  index entries and tombstones, post submission and withdrawal, canonical
+  `IBB0` post-document headers and bodies, and BBS0 refusal status codes.
+
+### Fixed
+
+- Fixed compound ADC feature-search selectors such as AirDC++'s
+  `+TCP4-NAT0` being reported as malformed search parameters instead of
+  separate required and excluded features.
+
 ## [1.01] - 2026-08-16
 
 ### Added

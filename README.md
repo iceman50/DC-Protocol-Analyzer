@@ -7,7 +7,7 @@ altering network traffic.
 
 - Plugin: **Protocol Analyzer**
 - Binary: `ProtocolAnalyzer.dll`
-- Version: **1.01**
+- Version: **1.02**
 - Author and project copyright: **iceman50**
 - License: **GNU GPL version 2 or later**
 - Platform: **Windows x86-64**
@@ -168,14 +168,14 @@ Recognized BASE actions include:
 
 Protocol Analyzer recognizes the documented feature identifiers:
 
-`TIGR`, `BZIP`, `ZLIF`, `ZLIG`, `PING`, `DFAV`, `UCMD`, `BLOM`, `NATT`,
-`PFSR`, `KEYP`, `SUDP`, `TYPE`, `FEED`, `SEGA`, `ADCS`, `ONID`, `ASCH`, and
-`RDEX`.
+`TIGR`, `BZIP`, `ZLIF`, `ZLIG`, `PING`, `DFAV`, `UCMD`, `BLOM`, `BBS0`,
+`NATT`, `PFSR`, `KEYP`, `SUDP`, `TYPE`, `FEED`, `SEGA`, `ADCS`, `ONID`,
+`ASCH`, and `RDEX`.
 
 It structurally recognizes extension actions including:
 
-`OID`, `OIR`, `GFA`, `RFA`, `NAT`, `RNT`, `ZON`, `ZOF`, `TPN`, `RSS`, and
-`PSR`.
+`OID`, `OIR`, `GFA`, `RFA`, `NAT`, `RNT`, `ZON`, `ZOF`, `TPN`, `RSS`, `PSR`,
+`BBD`, `BBL`, and `BBP`.
 
 Named-field decoding covers identity, application, slots, speeds, hub counts,
 IPv4/IPv6 addressing, search constraints, files and hashes, transfer ranges,
@@ -192,6 +192,25 @@ it can reach UTF-8 conversion, logging, retained history, or the RichEdit
 inspector. Raw Bloom-filter bytes are never displayed or copied.
 
 Reference: [ADC BLOM extension](https://adc.sourceforge.io/ADC-EXT.html#_blom_bloom_filter)
+
+#### BBS0 bulletin boards
+
+The analyzer recognizes `BBS0` feature negotiation and fully decodes board
+descriptors (`IBBD`), subscriptions and single-entry requests (`HBBL`), index
+entries and tombstones (`IBBL`), and post submission and withdrawal (`HBBP`).
+It labels board-specific fields, expands the `PE` permission mask, identifies
+BBS0 refusal codes, and validates required fields, routes, board names,
+integers, flags, CIDs, and 39-character TTH values.
+
+`IBB0` post documents are decoded as their own canonical format. The analyzer
+checks field order and uniqueness, required author and subject metadata,
+escaping, header size, UTF-8 structure, and LF framing. When a complete
+document is captured, its bounded, sanitized body and byte count are shown
+separately and `RT1` is identified as the RTF0 markdown subset. The analyzer
+does not fetch post files or treat unverified index metadata as proof of
+authorship.
+
+Reference: [ADC BBS0 extension](https://github.com/janvidar/adc-extensions/blob/main/ADC-bbs0-extension.md)
 
 ### Deployed ADC extension detection
 

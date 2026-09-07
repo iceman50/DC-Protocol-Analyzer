@@ -22,6 +22,7 @@
 #include <array>
 #include <cctype>
 #include <cstdint>
+#include <initializer_list>
 #include <limits>
 #include <sstream>
 #include <string_view>
@@ -87,7 +88,13 @@ struct AdcClientTypeDefinition {
 	const char* name;
 };
 
-constexpr std::array<Definition, 32> ADC_DEFINITIONS {{
+struct BbsPermissionDefinition {
+	uint64_t mask;
+	const char* code;
+	const char* name;
+};
+
+constexpr std::array<Definition, 36> ADC_DEFINITIONS {{
 	{ "STA", "Status", "Status" },
 	{ "SUP", "Supported features", "Handshake" },
 	{ "SID", "Session ID assignment", "Handshake" },
@@ -119,7 +126,11 @@ constexpr std::array<Definition, 32> ADC_DEFINITIONS {{
 	{ "PMI", "Private-message state information", "Chat" },
 	{ "PBD", "Partial-bundle information", "Transfer" },
 	{ "UBD", "Upload-bundle definition", "Transfer" },
-	{ "UBN", "Upload-bundle notification", "Transfer" }
+	{ "UBN", "Upload-bundle notification", "Transfer" },
+	{ "BBD", "Bulletin-board descriptor", "Bulletin board" },
+	{ "BBL", "Bulletin-board index", "Bulletin board" },
+	{ "BBP", "Bulletin-board post operation", "Bulletin board" },
+	{ "BB0", "Bulletin-board post document", "Bulletin board" }
 }};
 
 constexpr std::array<Definition, 90> NMDC_DEFINITIONS {{
@@ -215,7 +226,7 @@ constexpr std::array<Definition, 90> NMDC_DEFINITIONS {{
 	{ "$SetHubURL", "Preferred hub URL", "Hub" }
 }};
 
-constexpr std::array<FeatureDefinition, 36> ADC_FEATURE_DEFINITIONS {{
+constexpr std::array<FeatureDefinition, 37> ADC_FEATURE_DEFINITIONS {{
 	{ "BASE", "ADC base protocol" },
 	{ "BAS0", "Legacy ADC/0.10 base protocol" },
 	{ "TIGR", "Tiger tree hashes" },
@@ -227,6 +238,7 @@ constexpr std::array<FeatureDefinition, 36> ADC_FEATURE_DEFINITIONS {{
 	{ "UCMD", "User commands" },
 	{ "UCM0", "User commands revision 0" },
 	{ "RTF0", "Rich-text chat messages" },
+	{ "BBS0", "Bulletin boards" },
 	{ "BLOM", "Bloom-filter sharing" },
 	{ "BLO0", "Bloom-filter sharing revision 0" },
 	{ "NATT", "NAT traversal" },
@@ -318,6 +330,14 @@ constexpr std::array<AdcClientTypeDefinition, 7> ADC_CLIENT_TYPE_DEFINITIONS {{
 	{ 16U, "CT.owner", "Hub owner" },
 	{ 32U, "CT.hub", "Hub" },
 	{ 64U, "CT.hidden", "Hidden" }
+}};
+
+constexpr std::array<BbsPermissionDefinition, 5> BBS_PERMISSION_DEFINITIONS {{
+	{ 1U, "PE.subscribe", "Subscribe" },
+	{ 2U, "PE.thread", "Start threads" },
+	{ 4U, "PE.reply", "Reply" },
+	{ 8U, "PE.withdraw-own", "Withdraw own posts" },
+	{ 16U, "PE.withdraw-any", "Withdraw any post" }
 }};
 
 constexpr std::array<std::pair<const char*, const char*>, 115> ADC_FIELD_NAMES {{
@@ -619,6 +639,54 @@ const char* adcFieldName(const Result& result, string_view code) {
 		if(code == "FB") return "Invalid INF field";
 		if(code == "FC") return "Related command";
 	}
+	if(action == "BBD") {
+		if(code == "BD") return "Board name";
+		if(code == "NI") return "Board title";
+		if(code == "DE") return "Board description";
+		if(code == "PE") return "Session permissions";
+		if(code == "MS") return "Maximum post document size";
+		if(code == "TS") return "Newest entry timestamp";
+		if(code == "OT") return "Oldest replay timestamp";
+		if(code == "NP") return "Indexed post count";
+		if(code == "RM") return "Board removed";
+	}
+	if(action == "BBL") {
+		if(code == "BD") return "Board name";
+		if(code == "TR") return result.command == "HBBL" ?
+			"Requested post TTH" : "Post document TTH";
+		if(code == "TS") return result.command == "HBBL" ?
+			"Resume timestamp" : "Index timestamp";
+		if(code == "RM") return result.command == "HBBL" ?
+			"Cancel subscription" : "Post withdrawn";
+		if(code == "SI") return "Declared post document size";
+		if(code == "ID") return "Submitting session CID";
+		if(code == "NI") return "Submitter nickname";
+		if(code == "PA") return "Parent post TTH";
+		if(code == "TH") return "Thread root TTH";
+		if(code == "SJ") return "Subject (unverified index hint)";
+	}
+	if(action == "BBP") {
+		if(code == "TR") return "Post document TTH";
+		if(code == "SI") return "Declared post document size";
+		if(code == "BD") return "Board name";
+		if(code == "PA") return "Parent post TTH";
+		if(code == "SJ") return "Subject hint";
+		if(code == "RM") return "Withdraw post";
+		if(code == "ID") return "Client-supplied CID (discarded by hub)";
+		if(code == "NI") return "Client-supplied nickname (discarded by hub)";
+		if(code == "TH") return "Client-supplied thread root (discarded by hub)";
+		if(code == "TS") return "Client-supplied timestamp (discarded by hub)";
+	}
+	if(action == "BB0") {
+		if(code == "ID") return "Claimed author CID";
+		if(code == "PA") return "Parent post TTH";
+		if(code == "SJ") return "Subject";
+		if(code == "DA") return "Claimed composition timestamp";
+		if(code == "RT") return "Post body format (RTF0)";
+		if(code == "SG" || code == "KY") {
+			return "Reserved BBS0 authorship field";
+		}
+	}
 	if(action == "MSG" && code == "RT") {
 		return "Rich-text formatting (RTF0)";
 	}
@@ -772,6 +840,41 @@ bool isAdcAlphaNum(char ch) {
 	return isAdcAlpha(ch) || (ch >= '0' && ch <= '9');
 }
 
+/*
+ * An ADC feature-broadcast header contains one selector token made from one
+ * or more signed FOURCCs, for example +TCP4-NAT0. Decode each five-character
+ * segment separately while consuming the header token only once.
+ */
+void parseAdcFeatureSelector(Result& result, string_view selector) {
+	if(selector.empty() || selector.size() % 5 != 0) {
+		addWarning(result,
+			"ADC feature selector must contain one or more signed FOURCCs.", true);
+		addField(result, "", "Malformed feature selector", bounded(selector));
+		return;
+	}
+
+	for(size_t offset = 0; offset < selector.size(); offset += 5) {
+		const auto feature = selector.substr(offset, 5);
+		const auto operation = feature[0];
+		const auto code = feature.substr(1);
+		if((operation != '+' && operation != '-') || !isAdcAlpha(code[0]) ||
+			!std::all_of(code.begin() + 1, code.end(), isAdcAlphaNum))
+		{
+			addWarning(result,
+				"ADC feature selector must use '+' or '-' followed by a FOURCC.",
+				true);
+			addField(result, "", "Malformed feature selector", bounded(feature));
+			continue;
+		}
+
+		const auto name = featureName(ADC_FEATURE_DEFINITIONS, code);
+		addField(result, string(1, operation), operation == '+' ?
+			(name ? string("Required feature — ") + name : "Required feature") :
+			(name ? string("Excluded feature — ") + name : "Excluded feature"),
+			bounded(code));
+	}
+}
+
 bool isBase32(string_view value) {
 	return !value.empty() && std::all_of(value.begin(), value.end(), [](char ch) {
 		return (ch >= 'A' && ch <= 'Z') || (ch >= '2' && ch <= '7');
@@ -897,7 +1000,7 @@ string decodeAdcValue(Result& result, string_view value) {
 		case 'n': decoded += "\\n"; break;
 		case '\\': decoded += '\\'; break;
 		default:
-			addWarning(result, "ADC value contains an unknown escape sequence.");
+			addWarning(result, "ADC value contains an unknown escape sequence.", true);
 			decoded += '\\';
 			decoded += value[i];
 			break;
@@ -1146,6 +1249,472 @@ string firstFieldValue(const Result& result, string_view code) {
 	return i == result.fields.end() ? string() : i->value;
 }
 
+size_t fieldCount(const Result& result, string_view code) {
+	return static_cast<size_t>(std::count_if(result.fields.begin(),
+		result.fields.end(), [code](const Field& field) {
+			return field.code == code;
+		}));
+}
+
+void validateBbsRouting(Result& result, std::initializer_list<char> allowed) {
+	if(result.command.empty() || std::find(allowed.begin(), allowed.end(),
+		result.command.front()) == allowed.end())
+	{
+		addWarning(result, "BBS0 " + result.action +
+			" command uses a routing type not allowed by the extension.", true);
+	}
+}
+
+void requireBbsField(Result& result, string_view code) {
+	if(fieldCount(result, code) == 0) {
+		addWarning(result, "BBS0 " + result.action + " requires the " +
+			string(code) + " field.", true);
+	}
+}
+
+void rejectRepeatedBbsFields(Result& result,
+	std::initializer_list<string_view> codes)
+{
+	for(const auto code : codes) {
+		if(fieldCount(result, code) > 1) {
+			addWarning(result, "BBS0 " + result.action + " field " +
+				string(code) + " must not be repeated.", true);
+		}
+	}
+}
+
+void validateBbsUnsigned(Result& result, string_view code) {
+	const auto value = firstFieldValue(result, code);
+	if(fieldCount(result, code) == 0) {
+		return;
+	}
+	uint64_t number = 0;
+	if(!parseUnsigned(value, number)) {
+		addWarning(result, "BBS0 " + string(code) +
+			" must be an unsigned decimal integer.", true);
+	}
+}
+
+void validateBbsFlag(Result& result, string_view code) {
+	const auto value = firstFieldValue(result, code);
+	if(fieldCount(result, code) != 0 && value != "1") {
+		addWarning(result, "BBS0 " + string(code) +
+			" flag must have the exact value 1; other values are reserved.", true);
+	}
+}
+
+void validateBbsTth(Result& result, string_view code) {
+	const auto value = firstFieldValue(result, code);
+	if(fieldCount(result, code) != 0 &&
+		(value.size() != 39 || !isBase32(value)))
+	{
+		addWarning(result, "BBS0 " + string(code) +
+			" must be a 39-character Base32 Tiger tree hash.", true);
+	}
+}
+
+void validateBbsCid(Result& result, string_view code) {
+	const auto value = firstFieldValue(result, code);
+	if(fieldCount(result, code) != 0 &&
+		(value.empty() || !isBase32(value)))
+	{
+		addWarning(result, "BBS0 " + string(code) +
+			" must be a Base32 CID whose length follows the session hash.", true);
+	}
+}
+
+void validateBbsBoardName(Result& result) {
+	const auto board = firstFieldValue(result, "BD");
+	const bool validCharacters = std::all_of(board.begin(), board.end(),
+		[](char ch) {
+			return (ch >= 'A' && ch <= 'Z') ||
+				(ch >= 'a' && ch <= 'z') ||
+				(ch >= '0' && ch <= '9') || ch == '.' || ch == '-' || ch == '_';
+		});
+	if(board.empty() || board.size() > 64 || !validCharacters) {
+		addWarning(result,
+			"BBS0 BD must contain 1-64 ASCII letters, digits, '.', '-', or '_'.",
+			true);
+	}
+}
+
+void decodeBbsPermissions(Result& result) {
+	const auto rawPermissions = firstFieldValue(result, "PE");
+	uint64_t permissions = 0;
+	if(!parseUnsigned(rawPermissions, permissions)) {
+		return;
+	}
+
+	string description;
+	for(const auto& definition : BBS_PERMISSION_DEFINITIONS) {
+		if((permissions & definition.mask) == 0U) {
+			continue;
+		}
+		if(!description.empty()) {
+			description += ", ";
+		}
+		description += definition.name;
+	}
+	if(description.empty()) {
+		description = "No permissions";
+	}
+
+	constexpr uint64_t knownMask = 1U | 2U | 4U | 8U | 16U;
+	const auto unknown = permissions & ~knownMask;
+	if(unknown != 0U) {
+		description += ", unknown bits " + std::to_string(unknown);
+		addWarning(result,
+			"BBS0 PE contains unknown permission bits; they were preserved.");
+	}
+
+	for(auto& field : result.fields) {
+		if(field.code == "PE") {
+			field.value = std::to_string(permissions) + " (" + description + ")";
+			break;
+		}
+	}
+	for(const auto& definition : BBS_PERMISSION_DEFINITIONS) {
+		if((permissions & definition.mask) != 0U) {
+			addField(result, definition.code,
+				string("Board permission \xE2\x80\x94 ") + definition.name, "Set");
+		}
+	}
+	if(unknown != 0U) {
+		addField(result, "PE.unknown", "Unknown board-permission bits",
+			std::to_string(unknown));
+	}
+}
+
+bool containsAdcNewlineEscape(string_view encoded) {
+	for(size_t i = 0; i < encoded.size(); ++i) {
+		if(encoded[i] != '\\' || i + 1 >= encoded.size()) {
+			continue;
+		}
+		if(encoded[i + 1] == 'n') {
+			return true;
+		}
+		++i;
+	}
+	return false;
+}
+
+bool containsUnknownAdcEscape(string_view encoded) {
+	for(size_t i = 0; i < encoded.size(); ++i) {
+		if(encoded[i] != '\\') {
+			continue;
+		}
+		if(i + 1 >= encoded.size() ||
+			(encoded[i + 1] != 's' && encoded[i + 1] != 'n' &&
+				encoded[i + 1] != '\\'))
+		{
+			return true;
+		}
+		++i;
+	}
+	return false;
+}
+
+int bbsDocumentFieldRank(string_view code) {
+	if(code == "ID") return 0;
+	if(code == "PA") return 1;
+	if(code == "SJ") return 2;
+	if(code == "DA") return 3;
+	if(code == "RT") return 4;
+	return -1;
+}
+
+void validateBbsPostDocument(Result& result,
+	const std::vector<string_view>& tokens, size_t start, string_view header,
+	bool hasHeaderLf)
+{
+	validateBbsRouting(result, { 'I' });
+	if(!hasHeaderLf) {
+		addWarning(result,
+			"BBS0 post document is missing the LF that terminates its header.", true);
+	}
+	if(header.size() >= 8192) {
+		addWarning(result,
+			"BBS0 post document header exceeds 8192 bytes including its LF.", true);
+	}
+	for(size_t i = 0; i < header.size();) {
+		const auto ch = static_cast<unsigned char>(header[i]);
+		if(ch < 0x20U || ch == 0x7fU) {
+			addWarning(result,
+				"BBS0 post document header contains a forbidden control character.",
+				true);
+			break;
+		}
+		if(ch < 0x80U) {
+			++i;
+			continue;
+		}
+		const auto length = validUtf8SequenceLength(header, i);
+		if(length == 0) {
+			addWarning(result,
+				"BBS0 post document header is not valid UTF-8.", true);
+			break;
+		}
+		i += length;
+	}
+
+	std::vector<string_view> seen;
+	seen.reserve(tokens.size() - std::min(start, tokens.size()));
+	int previousRank = -1;
+	bool unknownFieldsStarted = false;
+	for(size_t i = start; i < tokens.size(); ++i) {
+		const auto token = tokens[i];
+		if(token.size() < 2 || !isAdcAlpha(token[0]) ||
+			!isAdcAlphaNum(token[1]))
+		{
+			continue;
+		}
+		const auto code = token.substr(0, 2);
+		const auto encoded = token.substr(2);
+		if(encoded.empty()) {
+			addWarning(result,
+				"BBS0 post document fields must not have empty values.", true);
+		}
+		if(std::find(seen.begin(), seen.end(), code) != seen.end()) {
+			addWarning(result,
+				"BBS0 post document fields must not be repeated.", true);
+		} else {
+			seen.push_back(code);
+		}
+		if(containsUnknownAdcEscape(encoded)) {
+			addWarning(result,
+				"BBS0 post document fields contain a reserved ADC escape.", true);
+		}
+		if(code == "SJ" && containsAdcNewlineEscape(encoded)) {
+			addWarning(result,
+				"BBS0 post document subjects must not contain an escaped newline.",
+				true);
+		}
+
+		const int rank = bbsDocumentFieldRank(code);
+		if(rank < 0) {
+			unknownFieldsStarted = true;
+		} else if(unknownFieldsStarted || rank < previousRank) {
+			addWarning(result,
+				"BBS0 post document fields are not in canonical order.", true);
+		} else {
+			previousRank = rank;
+		}
+	}
+
+	requireBbsField(result, "ID");
+	validateBbsCid(result, "ID");
+	validateBbsTth(result, "PA");
+	validateBbsUnsigned(result, "DA");
+	const auto parent = firstFieldValue(result, "PA");
+	const auto subject = firstFieldValue(result, "SJ");
+	if(parent.empty() && subject.empty()) {
+		addWarning(result,
+			"A BBS0 post that starts a thread requires an SJ subject.", true);
+	} else if(!parent.empty() && subject.empty()) {
+		addWarning(result, "A BBS0 reply should include an SJ subject.");
+	}
+
+	const auto richText = firstFieldValue(result, "RT");
+	if(!richText.empty()) {
+		uint64_t format = 0;
+		if(!parseUnsigned(richText, format)) {
+			addWarning(result, "BBS0 RT must be an unsigned decimal integer.", true);
+		} else if(format != 1) {
+			addWarning(result,
+				"BBS0 RT value is reserved; the body must be treated as plain text.");
+		}
+	}
+}
+
+void validateBbsBoardDescriptor(Result& result) {
+	validateBbsRouting(result, { 'I' });
+	rejectRepeatedBbsFields(result,
+		{ "BD", "NI", "DE", "PE", "MS", "TS", "OT", "NP", "RM" });
+	for(const auto code : { "BD", "PE", "MS", "TS", "OT" }) {
+		requireBbsField(result, code);
+	}
+	validateBbsBoardName(result);
+	for(const auto code : { "PE", "MS", "TS", "OT", "NP" }) {
+		validateBbsUnsigned(result, code);
+	}
+	validateBbsFlag(result, "RM");
+
+	uint64_t permissions = 0;
+	if(parseUnsigned(firstFieldValue(result, "PE"), permissions) &&
+		(permissions & 1U) == 0U)
+	{
+		addWarning(result,
+			"A BBS0 board descriptor sent to a session must grant subscribe permission.",
+			true);
+	}
+	decodeBbsPermissions(result);
+}
+
+void validateBbsIndex(Result& result) {
+	validateBbsRouting(result, { 'H', 'I' });
+	rejectRepeatedBbsFields(result,
+		{ "TR", "SI", "BD", "ID", "NI", "PA", "TH", "SJ", "TS", "RM" });
+	requireBbsField(result, "BD");
+	validateBbsBoardName(result);
+	validateBbsTth(result, "TR");
+	validateBbsFlag(result, "RM");
+
+	if(result.command == "HBBL") {
+		validateBbsUnsigned(result, "TS");
+		if(!firstFieldValue(result, "TR").empty() &&
+			!firstFieldValue(result, "TS").empty())
+		{
+			addWarning(result,
+				"A BBS0 single-entry request must not also carry a TS cursor.", true);
+		}
+		if(!firstFieldValue(result, "RM").empty() &&
+			(!firstFieldValue(result, "TR").empty() ||
+				!firstFieldValue(result, "TS").empty()))
+		{
+			addWarning(result,
+				"A BBS0 cancellation also carries an entry request or replay cursor.");
+		}
+		return;
+	}
+
+	if(result.command != "IBBL") {
+		return;
+	}
+	for(const auto code : { "TR", "TS" }) {
+		requireBbsField(result, code);
+	}
+	validateBbsUnsigned(result, "TS");
+	const bool tombstone = firstFieldValue(result, "RM") == "1";
+	if(tombstone) {
+		const auto extra = std::find_if(result.fields.begin(), result.fields.end(),
+			[](const Field& field) {
+				return field.code != "TR" && field.code != "BD" &&
+					field.code != "TS" && field.code != "RM";
+			});
+		if(extra != result.fields.end()) {
+			addWarning(result,
+				"A BBS0 tombstone should carry only TR, BD, TS, and RM1.");
+		}
+		return;
+	}
+
+	for(const auto code : { "SI", "ID", "TH" }) {
+		requireBbsField(result, code);
+	}
+	validateBbsUnsigned(result, "SI");
+	validateBbsCid(result, "ID");
+	validateBbsTth(result, "PA");
+	validateBbsTth(result, "TH");
+}
+
+void validateBbsPostOperation(Result& result) {
+	validateBbsRouting(result, { 'H' });
+	rejectRepeatedBbsFields(result,
+		{ "TR", "SI", "BD", "PA", "SJ", "RM", "ID", "NI", "TH", "TS" });
+	requireBbsField(result, "TR");
+	requireBbsField(result, "BD");
+	validateBbsTth(result, "TR");
+	validateBbsTth(result, "PA");
+	validateBbsBoardName(result);
+	validateBbsFlag(result, "RM");
+
+	const bool withdrawal = firstFieldValue(result, "RM") == "1";
+	if(!withdrawal) {
+		requireBbsField(result, "SI");
+		validateBbsUnsigned(result, "SI");
+		if(firstFieldValue(result, "SJ").empty()) {
+			addWarning(result, "A BBS0 submission should include an SJ subject hint.");
+		}
+	}
+
+	for(const auto code : { "ID", "NI", "TH", "TS" }) {
+		if(fieldCount(result, code) != 0) {
+			addWarning(result, "A BBS0 hub discards client-supplied " +
+				string(code) + " on BBP.");
+		}
+	}
+}
+
+const char* bbsStatusMeaning(string_view status) {
+	if(status.size() != 3 || status[0] < '0' || status[0] > '2') {
+		return nullptr;
+	}
+	const auto code = status.substr(1);
+	if(code == "70") return "Generic bulletin-board error";
+	if(code == "71") return "No such board";
+	if(code == "72") return "Post document too large";
+	if(code == "75") return "Posting rate exceeded";
+	if(code == "76") return "No index entry for requested post";
+	return nullptr;
+}
+
+const char* bbsSharedStatusMeaning(string_view status) {
+	if(status.size() != 3) {
+		return nullptr;
+	}
+	const auto code = status.substr(1);
+	if(code == "25") return "Permission denied for bulletin-board operation";
+	if(code == "26") return "Board restricted to registered users";
+	if(code == "40") return "Malformed bulletin-board command";
+	if(code == "43") return "Missing or invalid bulletin-board field";
+	return nullptr;
+}
+
+void addAdcStatusMetadata(Result& result) {
+	const auto status = firstFieldValue(result, "code");
+	if(status.size() != 3 || !std::all_of(status.begin(), status.end(),
+		[](char ch) { return ch >= '0' && ch <= '9'; }))
+	{
+		addWarning(result, "ADC status code must contain exactly three digits.", true);
+		return;
+	}
+	const char* severity = status[0] == '0' ? "Success" :
+		(status[0] == '1' ? "Recoverable error" :
+			(status[0] == '2' ? "Fatal error" : "Reserved severity"));
+	addField(result, "severity", "Status severity", severity);
+	const auto related = firstFieldValue(result, "FC");
+	const bool bbsCommand = related == "BBL" || related == "BBP";
+	const char* bbsOnlyMeaning = bbsStatusMeaning(status);
+	const char* meaning = bbsOnlyMeaning;
+	if(!meaning && bbsCommand) {
+		meaning = bbsSharedStatusMeaning(status);
+	}
+	if(meaning) {
+		addField(result, "meaning", "BBS0 status meaning", meaning);
+		if(status[0] != '1') {
+			addWarning(result,
+				"BBS0 status codes must use recoverable-error severity 1.", true);
+		}
+		if(related.empty()) {
+			addWarning(result, "A BBS0 refusal requires an FC field.", true);
+		}
+		if(bbsOnlyMeaning && !bbsCommand) {
+			addWarning(result,
+				"A BBS0-specific status code requires FCBBL or FCBBP.", true);
+		}
+		if(related == "BBP" && firstFieldValue(result, "TR").empty()) {
+			addWarning(result, "A refused BBS0 BBP requires the post TR.", true);
+		}
+		if(status.substr(1) == "76" && firstFieldValue(result, "TR").empty()) {
+			addWarning(result,
+				"A BBS0 no-index-entry refusal requires the requested TR.", true);
+		}
+
+		if(bbsCommand) {
+			for(auto& field : result.fields) {
+				if(field.code == "FM") field.name = "Missing required BBS0 field";
+				if(field.code == "FB") field.name = "Invalid BBS0 field";
+				if(field.code == "BD") field.name = "Board name";
+				if(field.code == "TR") field.name = "Related post TTH";
+				if(field.code == "MS") field.name = "Maximum post document size";
+				if(field.code == "TL") field.name = "Posting retry delay";
+			}
+		}
+	} else if(status[0] > '2') {
+		addWarning(result, "ADC status severity must be 0, 1, or 2.", true);
+	}
+}
+
 void validateBloomTransferSemantics(Result& result, bool request, string_view type, string_view identifier, string_view start, string_view bytes) {
 	result.binaryPayloadType = "blom";
 	result.name = request ? "Bloom filter request" : "Bloom filter response";
@@ -1366,6 +1935,60 @@ void buildAdcSummary(Result& result) {
 			(text.empty() ? " message" : ": " + text));
 		return;
 	}
+	if(result.action == "BBD") {
+		const auto board = firstFieldValue(result, "BD");
+		const auto title = firstFieldValue(result, "NI");
+		const bool removed = firstFieldValue(result, "RM") == "1";
+		setSummary(result, prefix + (removed ? "removed board" : "board") +
+			(board.empty() ? string() : " " + board) +
+			(title.empty() ? string() : ": " + title));
+		return;
+	}
+	if(result.action == "BBL") {
+		const auto board = firstFieldValue(result, "BD");
+		const auto hash = firstFieldValue(result, "TR");
+		const auto timestamp = firstFieldValue(result, "TS");
+		const bool removed = firstFieldValue(result, "RM") == "1";
+		if(result.command == "HBBL") {
+			string operation = removed ? "cancel subscription" :
+				(!hash.empty() ? "request bulletin entry" : "subscribe to board");
+			if(!board.empty()) {
+				operation += " " + board;
+			}
+			if(!hash.empty()) {
+				operation += " for " + hash;
+			} else if(!timestamp.empty()) {
+				operation += " from " + timestamp;
+			}
+			setSummary(result, prefix + operation);
+		} else {
+			const auto subject = firstFieldValue(result, "SJ");
+			setSummary(result, prefix + (removed ? "withdrawn bulletin" : "bulletin") +
+				(board.empty() ? string() : " on " + board) +
+				(subject.empty() ?
+					(hash.empty() ? string() : " " + hash) : ": " + subject));
+		}
+		return;
+	}
+	if(result.action == "BBP") {
+		const auto board = firstFieldValue(result, "BD");
+		const auto subject = firstFieldValue(result, "SJ");
+		const auto hash = firstFieldValue(result, "TR");
+		const bool removed = firstFieldValue(result, "RM") == "1";
+		setSummary(result, prefix + (removed ? "withdraw bulletin" : "submit bulletin") +
+			(board.empty() ? string() : " to " + board) +
+			(subject.empty() ?
+				(hash.empty() ? string() : " " + hash) : ": " + subject));
+		return;
+	}
+	if(result.action == "BB0") {
+		const auto subject = firstFieldValue(result, "SJ");
+		const bool richText = firstFieldValue(result, "RT") == "1";
+		setSummary(result, prefix + "BBS0 post document" +
+			(subject.empty() ? string() : ": " + subject) +
+			(richText ? " (RTF0 body)" : " (plain-text body)"));
+		return;
+	}
 	if(result.action == "SCH") {
 		const auto term = firstFieldValue(result, "AN");
 		const auto hash = firstFieldValue(result, "TR");
@@ -1444,13 +2067,32 @@ Result analyzeAdc(string_view raw, bool redactionEnabled) {
 		raw = raw.substr(0, MAX_ANALYZER_INPUT_BYTES);
 		addWarning(result, "Message exceeded the analyzer input limit and was truncated.", true);
 	}
-	findAdcSecurityMasks(raw, masks);
-	auto body = trimProtocolEnd(raw);
-	const auto additionalFrame = body.find_first_of("\r\n");
-	if(additionalFrame != string_view::npos) {
-		body = body.substr(0, additionalFrame);
-		addWarning(result,
-			"Additional ADC frames were retained in raw output but not merged into this row.");
+	string_view postDocumentBody;
+	bool postDocumentBodyPresent = false;
+	bool postDocumentHeaderHasCr = false;
+	string_view body;
+	const bool bbsDocument = raw.size() >= 4 && raw.substr(0, 4) == "IBB0";
+	const auto bbsHeaderLf = bbsDocument ? raw.find('\n') : string_view::npos;
+	if(bbsHeaderLf != string_view::npos) {
+		body = raw.substr(0, bbsHeaderLf);
+		postDocumentBody = raw.substr(bbsHeaderLf + 1);
+		postDocumentBodyPresent = true;
+		if(!body.empty() && body.back() == '\r') {
+			postDocumentHeaderHasCr = true;
+			body.remove_suffix(1);
+		}
+		// A post body is raw file content, not a batch of additional ADC frames.
+		findAdcSecurityMasks(body, masks);
+	} else {
+		body = trimProtocolEnd(raw);
+		postDocumentHeaderHasCr = bbsDocument && !raw.empty() && raw.back() == '\r';
+		const auto additionalFrame = body.find_first_of("\r\n");
+		if(additionalFrame != string_view::npos) {
+			body = body.substr(0, additionalFrame);
+			addWarning(result,
+				"Additional ADC frames were retained in raw output but not merged into this row.");
+		}
+		findAdcSecurityMasks(raw, masks);
 	}
 	if(body.size() < 4) {
 		result.command = sanitize(body, 16);
@@ -1480,6 +2122,10 @@ Result analyzeAdc(string_view raw, bool redactionEnabled) {
 	}
 	result.action = sanitize(action, 16);
 	result.command = sanitize(body.substr(0, 4), 16);
+	if(postDocumentHeaderHasCr) {
+		addWarning(result,
+			"A BBS0 post document must not contain CR before its header LF.", true);
+	}
 
 	const auto definition = findDefinition(
 		ADC_DEFINITIONS.data(), ADC_DEFINITIONS.data() + ADC_DEFINITIONS.size(), action);
@@ -1538,17 +2184,13 @@ Result analyzeAdc(string_view raw, bool redactionEnabled) {
 		} else {
 			validateAdcSid(result, tokens[index], "Sender");
 			addField(result, "SID", "Sender SID", bounded(tokens[index++]));
-		}
-		while(index < tokens.size() && tokens[index].size() == 5 &&
-			(tokens[index][0] == '+' || tokens[index][0] == '-'))
-		{
-			const auto feature = tokens[index++];
-			const auto code = feature.substr(1);
-			const auto name = featureName(ADC_FEATURE_DEFINITIONS, code);
-			addField(result, string(1, feature[0]), feature[0] == '+' ?
-				(name ? string("Required feature — ") + name : "Required feature") :
-				(name ? string("Excluded feature — ") + name : "Excluded feature"),
-				bounded(code));
+			if(index >= tokens.size()) {
+				addWarning(result,
+					"Feature-broadcast ADC message is missing its feature selector.",
+					true);
+			} else {
+				parseAdcFeatureSelector(result, tokens[index++]);
+			}
 		}
 	} else if(type == 'U') {
 		if(index >= tokens.size()) {
@@ -1585,6 +2227,7 @@ Result analyzeAdc(string_view raw, bool redactionEnabled) {
 			positional("description", "Description");
 		}
 		parseAdcNamedFields(result, raw, tokens, index, masks);
+		addAdcStatusMetadata(result);
 	} else if(action == "SUP") {
 		for(; index < tokens.size(); ++index) {
 			const auto feature = tokens[index];
@@ -1613,6 +2256,27 @@ Result analyzeAdc(string_view raw, bool redactionEnabled) {
 		action == "UBD" || action == "UBN" || action == "RFA")
 	{
 		parseAdcNamedFields(result, raw, tokens, index, masks);
+	} else if(action == "BBD") {
+		parseAdcNamedFields(result, raw, tokens, index, masks);
+		validateBbsBoardDescriptor(result);
+	} else if(action == "BBL") {
+		parseAdcNamedFields(result, raw, tokens, index, masks);
+		validateBbsIndex(result);
+	} else if(action == "BBP") {
+		parseAdcNamedFields(result, raw, tokens, index, masks);
+		validateBbsPostOperation(result);
+	} else if(action == "BB0") {
+		parseAdcNamedFields(result, raw, tokens, index, masks);
+		validateBbsPostDocument(result, tokens, index, body,
+			postDocumentBodyPresent);
+		if(postDocumentBodyPresent) {
+			const bool richText = firstFieldValue(result, "RT") == "1";
+			addField(result, "body", richText ?
+				"Post body (RTF0 markdown subset)" : "Post body (plain text)",
+				bounded(postDocumentBody));
+			addField(result, "bodyBytes", "Post body byte count",
+				std::to_string(postDocumentBody.size()));
+		}
 	} else if(action == "MSG") {
 		if(require(1, "MSG requires message text.")) {
 			positional("text", "Message text");
